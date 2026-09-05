@@ -1,1 +1,8 @@
 
+local Library = loadstring(game:HttpGet("https://github.com/Robojini/Tuturial_UI/blob/main/UI_Template_1"))
+
+local Window = Library.CreateLib("ULTRAKILL", "RJTheme3")
+
+local Tab = Window:NewTab("1")
+
+local Section = Tab:NewSection("1")
