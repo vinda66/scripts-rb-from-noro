@@ -30,7 +30,6 @@ end
 -- ГЛАВНЫЙ ЦИКЛ ОБНОВЛЕНИЯ (КАЖДЫЙ КАДР)
 RunService.RenderStepped:Connect(function()
 	local character = localPlayer.Character
-	if not character then return end
 	
 	local myHead = character:FindFirstChild("Head")
 	if not myHead then return end
