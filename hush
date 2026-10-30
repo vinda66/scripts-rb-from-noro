@@ -1,0 +1,76 @@
+-----------by noro-----
+local Players = game:GetService("Players")
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+-------------------------------------------------------
+local localPlayer = Players.LocalPlayer
+
+-- Настройки детектора
+local MAX_DISTANCE = 250 -- Дальность работы подсветки (в блоках)
+-------------------------------------------------------
+-- ФУНКЦИЯ ВКЛЮЧЕНИЯ ПОДСВЕТКИ (ЗЕЛЕНЫЙ ЦВЕТ)
+local function highlightPart(part)
+	if not part:FindFirstChild("SelectionBox") then
+		local box = Instance.new("SelectionBox")
+		box.Adornee = part
+		box.Color3 = Color3.fromRGB(0, 255, 0) -- Зеленый цвет рамки (R=0, G=255, B=0)
+		box.LineThickness = 0.05
+		box.Parent = part
+	end
+end
+-------------------------------------------------------
+-- ФУНКЦИЯ ВЫКЛЮЧЕНИЯ ПОДСВЕТКИ
+local function removeHighlight(part)
+	local box = part:FindFirstChild("SelectionBox")
+	if box then
+		box:Destroy()
+	end
+end
+-------------------------------------------------------
+-- ГЛАВНЫЙ ЦИКЛ ОБНОВЛЕНИЯ (КАЖДЫЙ КАДР)
+RunService.RenderStepped:Connect(function()
+	local character = localPlayer.Character
+	if not character then return end
+	
+	local myHead = character:FindFirstChild("Head")
+	if not myHead then return end
+	
+	---------------------------------------------------
+	-- Перебор всех игроков на сервере
+	for _, otherPlayer in ipairs(Players:GetPlayers()) do
+		
+		-- Проверяем, что это не наш персонаж и у цели есть тело
+		if otherPlayer ~= localPlayer and otherPlayer.Character then
+			local otherCharacter = otherPlayer.Character
+			local otherHead = otherCharacter:FindFirstChild("Head")
+			
+			if otherHead then
+				-- 1. Считаем вектор и расстояние до головы цели
+				local vectorToOther = (otherHead.Position - myHead.Position)
+				local distance = vectorToOther.Magnitude
+				
+				-- 2. Если игрок входит в радиус действия
+				if distance <= MAX_DISTANCE then
+					
+					-- 3. Проверяем препятствия и стены (Raycast)
+					local raycastParams = RaycastParams.new()
+					raycastParams.FilterInstanceTokens = {character} -- Игнорируем себя, чтобы луч не бился об твое тело
+					raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+					
+					local raycastResult = Workspace:Raycast(myHead.Position, vectorToOther, raycastParams)
+					
+					-- Если луч успешно долетел и коснулся любой части тела другого игрока
+					if raycastResult and raycastResult.Instance:IsDescendantOf(otherCharacter) then
+						highlightPart(otherHead) -- Включаем зеленую подсветку
+					else
+						removeHighlight(otherHead) -- Гасим, если за стеной
+					end
+				else
+					removeHighlight(otherHead) -- Гасим, если слишком далеко
+				end
+				
+			end
+		end
+	end
+	---------------------------------------------------
+end)
