@@ -134,7 +134,6 @@ LoadingScreen:Destroy()
 local InfoBarFrame = Instance.new("Frame")
 InfoBarFrame.Name = "NYX_InfoBar"
 InfoBarFrame.Size = UDim2.new(0, 150, 0, 32)
--- AnchorPoint (0.5, 0) позволяет ровно центрировать по X относительно экрана
 InfoBarFrame.AnchorPoint = Vector2.new(0.5, 0)
 InfoBarFrame.Position = UDim2.new(0.5, 0, 0, 10) 
 InfoBarFrame.BackgroundColor3 = Theme.Background
@@ -150,7 +149,7 @@ EyeIcon.Text = "👁️"
 EyeIcon.TextColor3 = Theme.Primary
 EyeIcon.Font = Enum.Font.GothamBold
 EyeIcon.TextSize = 14
-EyeIcon.TextYAlignment = Enum.TextYAlignment.Center -- ИСПРАВЛЕНО С TextVAlignment
+EyeIcon.TextYAlignment = Enum.TextYAlignment.Center -- ПОЛНОСТЬЮ ИСПРАВЛЕНО НА ПРАВИЛЬНЫЙ ENUM
 EyeIcon.Parent = InfoBarFrame
 table.insert(ThemeObjects.Accents, EyeIcon)
 
@@ -163,6 +162,7 @@ StreamLabel.TextColor3 = Theme.TextMain
 StreamLabel.Font = Enum.Font.GothamBold
 StreamLabel.TextSize = 11
 StreamLabel.TextXAlignment = Enum.TextXAlignment.Left
+StreamLabel.TextYAlignment = Enum.TextYAlignment.Center
 StreamLabel.Parent = InfoBarFrame
 
 -- Мониторинг FPS/Ping для отдельной полоски
@@ -271,6 +271,7 @@ Title.TextColor3 = Theme.TextMain
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextYAlignment = Enum.TextYAlignment.Center
 
 -- ПРОФИЛЬ ИГРОКА СЛЕВА
 local ProfileFrame = Instance.new("Frame")
@@ -304,6 +305,7 @@ PlayerName.TextColor3 = Theme.TextMain
 PlayerName.Font = Enum.Font.GothamBold
 PlayerName.TextSize = 11
 PlayerName.TextXAlignment = Enum.TextXAlignment.Left
+PlayerName.TextYAlignment = Enum.TextYAlignment.Center
 PlayerName.Parent = ProfileFrame
 local PlayerTag = Instance.new("TextLabel")
 PlayerTag.Size = UDim2.new(1, -50, 0, 12)
@@ -314,6 +316,7 @@ PlayerTag.TextColor3 = Theme.TextSub
 PlayerTag.Font = Enum.Font.GothamSemibold
 PlayerTag.TextSize = 9
 PlayerTag.TextXAlignment = Enum.TextXAlignment.Left
+PlayerTag.TextYAlignment = Enum.TextYAlignment.Center
 PlayerTag.Parent = ProfileFrame
 -- ГЛАВНЫЙ КОНТЕЙНЕР ДЛЯ ВКЛАДОК
 local Container = Instance.new("Frame")
@@ -387,7 +390,7 @@ isMenuOpen = true
 else
 if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
 lastSavedPos = MainFrame.Position
--- Перелет и схлопывание в координаты верхней инфо-полоски
+-- Схлопывание и перелет в координаты верхней центральной инфо-полоски
 local targetPos = InfoBarFrame.Position
 local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
 collapseTween:Play()
@@ -416,6 +419,7 @@ btn.TextColor3 = Theme.TextSub
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 12
 btn.TextXAlignment = Enum.TextXAlignment.Left
+btn.TextYAlignment = Enum.TextYAlignment.Center
 addCorners(btn, 6)
 local bStroke = addStroke(btn, Theme.Primary, 1, 1)
 table.insert(ThemeObjects.Strokes, bStroke)
@@ -454,6 +458,7 @@ label.TextColor3 = Theme.TextMain
 label.Font = Enum.Font.GothamSemibold
 label.TextSize = 13
 label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextYAlignment = Enum.TextYAlignment.Center
 label.Parent = frame
 local toggleBg = Instance.new("TextButton")
 toggleBg.Size = UDim2.new(0, 40, 0, 22)
@@ -537,6 +542,7 @@ nameLabel.Text = plr.Name .. " [0m]"
 nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
 nameLabel.TextSize = 12
 nameLabel.Font = Enum.Font.GothamBold
+nameLabel.TextYAlignment = Enum.TextYAlignment.Center
 nameLabel.Parent = billboard
 local invLabel = Instance.new("TextLabel")
 invLabel.Position = UDim2.new(0, 0, 0, 18)
@@ -546,10 +552,11 @@ invLabel.Text = getEquippedItem(plr)
 invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
 invLabel.TextSize = 10
 invLabel.Font = Enum.Font.GothamSemibold
+invLabel.TextYAlignment = Enum.TextYAlignment.Center
 invLabel.Parent = billboard
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
-if espToggle and char and char.Parent mixin and head and billboard and nameLabel and invLabel and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+if espToggle and char and char.Parent and head and billboard and nameLabel and invLabel and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
 local distanceEnd = (head.Position - LocalPlayer.Character.Head.Position).Magnitude
 local distanceMeters = math.round(distanceEnd / 3.5)
 nameLabel.Text = plr.Name .. " [" .. tostring(distanceMeters) .. "m]"
@@ -604,6 +611,7 @@ MainLabel.TextColor3 = Theme.TextMain
 MainLabel.Font = Enum.Font.GothamSemibold
 MainLabel.TextSize = 13
 MainLabel.TextXAlignment = Enum.TextXAlignment.Left
+MainLabel.TextYAlignment = Enum.TextYAlignment.Center
 MainLabel.Parent = MainToggleFrame
 local ArrowBtn = Instance.new("TextButton")
 ArrowBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -641,6 +649,7 @@ SubLabel.TextColor3 = Theme.TextSub
 SubLabel.Font = Enum.Font.GothamSemibold
 SubLabel.TextSize = 12
 SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+SubLabel.TextYAlignment = Enum.TextYAlignment.Center
 SubLabel.Parent = SubToggleFrame
 local SubToggleBg = Instance.new("TextButton")
 SubToggleBg.Size = UDim2.new(0, 34, 0, 16)
@@ -916,6 +925,7 @@ SliderLabel.Font = Enum.Font.GothamSemibold
 SliderLabel.TextColor3 = Theme.TextSub
 SliderLabel.TextSize = 12
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.TextYAlignment = Enum.TextYAlignment.Center
 local SliderFrame = Instance.new("Frame")
 SliderFrame.Parent = Pages.Combat
 SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
@@ -1042,6 +1052,7 @@ SettingsLabel.TextColor3 = Theme.TextMain
 SettingsLabel.Font = Enum.Font.GothamBold
 SettingsLabel.TextSize = 14
 SettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+SettingsLabel.TextYAlignment = Enum.TextYAlignment.Center
 SettingsLabel.Parent = Pages.Settings
 local ColorsContainer = Instance.new("Frame")
 ColorsContainer.Size = UDim2.new(1, -4, 0, 70)
