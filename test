@@ -1,4 +1,3 @@
-
 -- Удаляем старое меню и его FOV круг, если они были
 local oldGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("SimpleModMenu")
 if oldGui then oldGui:Destroy() end
@@ -17,18 +16,17 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- Цветовая палитра категорий
+-- Цветовая палитра категорий (Строгий монохромный стиль с фиолетовым акцентом)
 local Theme = {
     Background = Color3.fromRGB(11, 10, 15),
     Sidebar = Color3.fromRGB(7, 6, 9),
     TextMuted = Color3.fromRGB(130, 125, 140),
     TextWhite = Color3.fromRGB(255, 255, 255),
-    
-    -- Уникальные цвета для разделов
-    Combat = Color3.fromRGB(255, 65, 65),     -- Красный
-    Visuals = Color3.fromRGB(0, 255, 150),    -- Бирюзовый
-    World = Color3.fromRGB(255, 150, 0)       -- Оранжевый
+    Accent = Color3.fromRGB(138, 43, 226), -- Основной фиолетовый акцент
+    DarkBorder = Color3.fromRGB(45, 42, 55) -- Темная строгая рамка
 }
+
+_G.DisableMenuColor = false -- Настройка отключения цвета рамки меню
 
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SimpleModMenu"
@@ -64,7 +62,7 @@ local LoadingText = Instance.new("TextLabel")
 LoadingText.Size = UDim2.new(0, 300, 0, 30)
 LoadingText.Position = UDim2.new(0.5, -150, 0.5, -40)
 LoadingText.BackgroundTransparency = 1
-LoadingText.Text = "NYX RGB HUB LOADING..."
+LoadingText.Text = "NYX CUSTOM HUB LOADING..."
 LoadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
 LoadingText.TextSize = 20
 LoadingText.Font = Enum.Font.GothamBold
@@ -80,7 +78,7 @@ addStroke(BarBackground, Color3.fromRGB(100, 100, 110), 1)
 
 local ProgressBar = Instance.new("Frame")
 ProgressBar.Size = UDim2.new(0, 0, 1, 0)
-ProgressBar.BackgroundColor3 = Theme.Visuals
+ProgressBar.BackgroundColor3 = Theme.Accent
 ProgressBar.Parent = BarBackground
 addCorners(ProgressBar, 4)
 
@@ -105,7 +103,7 @@ MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
 MainFrame.Size = UDim2.new(0, 540, 0, 380)
 MainFrame.Active = true
 addCorners(MainFrame, 12)
-local MenuBorder = addStroke(MainFrame, Color3.fromRGB(45, 42, 55), 1.2)
+local MenuBorder = addStroke(MainFrame, Theme.Accent, 1.2)
 
 -- Кастомное перетаскивание
 local dragToggle, dragStart, startPos
@@ -153,7 +151,7 @@ MenuIcon.BackgroundTransparency = 1
 MenuIcon.Position = UDim2.new(0, 14, 0, 16) 
 MenuIcon.Size = UDim2.new(0, 22, 0, 22)    
 MenuIcon.Image = "rbxasset://textures/DevConsole/scythe.png"
-MenuIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
+MenuIcon.ImageColor3 = Theme.Accent
 
 task.spawn(function()
     while true do
@@ -252,20 +250,29 @@ end
 
 createTabFrame("Combat")
 createTabFrame("Visuals")
-createTabFrame("World")
+createTabFrame("Settings") -- Изменили World на Settings (Настройки)
 
 _G.currentTab = "Combat"
+
+-- Функция обновления цвета рамки в зависимости от настроек
+local function updateMenuBorder()
+    if _G.DisableMenuColor then
+        TweenService:Create(MenuBorder, TweenInfo.new(0.3), {Color = Theme.DarkBorder}):Play()
+    else
+        TweenService:Create(MenuBorder, TweenInfo.new(0.3), {Color = Theme.Accent}):Play()
+    end
+end
 
 local function showTab(tabName)
     _G.currentTab = tabName
     for name, page in pairs(Pages) do page.Visible = (name == tabName) end
-    TweenService:Create(MenuBorder, TweenInfo.new(0.4), {Color = Theme[tabName]}):Play()
-    TweenService:Create(MenuIcon, TweenInfo.new(0.4), {ImageColor3 = Theme[tabName]}):Play()
+    
+    updateMenuBorder()
 
     for _, btn in ipairs(Sidebar:GetChildren()) do
         if btn:IsA("TextButton") then
             if btn.Name == tabName .. "TabBtn" then
-                TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Theme[tabName], BackgroundTransparency = 0.2}):Play()
+                TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Theme.Accent, BackgroundTransparency = 0.2}):Play()
                 btn.TextColor3 = Theme.TextWhite
             else
                 TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(0,0,0), BackgroundTransparency = 1}):Play()
@@ -278,7 +285,7 @@ local function showTab(tabName)
     end
 end
 
--- СЖАТИЕ МЕНЮ (Кастомная логика анимации закрытия)
+-- СЖАТИЕ МЕНЮ
 local isMenuOpen = true
 local isTweening = false
 local normalSize = UDim2.new(0, 540, 0, 380)
@@ -330,7 +337,7 @@ local function createTabButton(name, iconText)
     addCorners(btn, 6)
     
     btn.MouseEnter:Connect(function()
-        if _G.currentTab ~= name then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.9, BackgroundColor3 = Theme[name], TextColor3 = Theme.TextWhite}):Play() end
+        if _G.currentTab ~= name then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.9, BackgroundColor3 = Theme.Accent, TextColor3 = Theme.TextWhite}):Play() end
     end)
     btn.MouseLeave:Connect(function()
         if _G.currentTab ~= name then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Theme.TextMuted}):Play() end
@@ -341,16 +348,12 @@ end
 
 createTabButton("Combat", "⚔")
 createTabButton("Visuals", "👁")
-createTabButton("World", "🌐")
+createTabButton("Settings", "⚙")
 
 -- ==========================================================
--- УМНЫЙ КОНСТРУКТОР ТУМБЛЕРОВ С БЕЛОЙ АНИМАЦИЕЙ
+-- СТРОГИЙ КОНСТРУКТОР ТУМБЛЕРОВ (НЕОНОВО-БЕЛЫЙ ХОВЕР, БЕЗ РГБ)
 -- ==========================================================
 local function createHazeToggle(text, tabContainer, callback)
-    local tabType = "Combat"
-    if tabContainer == Pages.Visuals then tabType = "Visuals" elseif tabContainer == Pages.World then tabType = "World" end
-    local accentColor = Theme[tabType]
-
     local frame = Instance.new("Frame")
     frame.Size = UDim2.new(1, 0, 0, 42)
     frame.BackgroundColor3 = Color3.fromRGB(18, 16, 24)
@@ -390,9 +393,10 @@ local function createHazeToggle(text, tabContainer, callback)
     local function updateVisuals(isHovering)
         local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         if isHovering then
+            -- ЧИСТО БЕЛЫЙ НЕОН ПРИ НАВЕДЕНИИ
             TweenService:Create(label, tInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
             TweenService:Create(frame, tInfo, {BackgroundColor3 = Color3.fromRGB(25, 22, 34)}):Play()
-            TweenService:Create(frameStroke, tInfo, {Color = accentColor}):Play()
+            TweenService:Create(frameStroke, tInfo, {Color = Color3.fromRGB(255, 255, 255)}):Play()
             if not state then
                 TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
                 TweenService:Create(toggleStroke, tInfo, {Color = Color3.fromRGB(255, 255, 255)}):Play()
@@ -409,8 +413,8 @@ local function createHazeToggle(text, tabContainer, callback)
                 TweenService:Create(toggleStroke, tInfo, {Color = Color3.fromRGB(55, 50, 70)}):Play()
                 TweenService:Create(ball, tInfo, {BackgroundColor3 = Color3.fromRGB(140, 135, 155)}):Play()
             else
-                TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = accentColor}):Play()
-                TweenService:Create(toggleStroke, tInfo, {Color = accentColor}):Play()
+                TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Theme.Accent}):Play()
+                TweenService:Create(toggleStroke, tInfo, {Color = Theme.Accent}):Play()
                 TweenService:Create(ball, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
             end
         end
@@ -423,8 +427,8 @@ local function createHazeToggle(text, tabContainer, callback)
         state = not state
         local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
         if state then
-            TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = accentColor}):Play()
-            TweenService:Create(toggleStroke, tInfo, {Color = accentColor}):Play()
+            TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Theme.Accent}):Play()
+            TweenService:Create(toggleStroke, tInfo, {Color = Theme.Accent}):Play()
             TweenService:Create(ball, tInfo, {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         else
             TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
@@ -447,7 +451,7 @@ local function getEquippedItem(plr)
 end
 
 -- ==========================================
--- ВКЛАДКА « VISUALS » (👁) И ЕСТЬ ЕЕ ФУНКЦИОНАЛ
+-- ВКЛАДКА « VISUALS » (👁) И ЕЁ ФУНКЦИОНАЛ
 -- ==========================================
 local espToggle = false
 local espConnections = {}
@@ -462,7 +466,7 @@ createHazeToggle("Player ESP", Pages.Visuals, function(state)
                 if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
                 local highlight = Instance.new("Highlight")
                 highlight.Name = "ESPHighlight"
-                highlight.FillColor = Theme.Visuals
+                highlight.FillColor = Theme.Accent
                 highlight.FillTransparency = 0.6
                 highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
                 highlight.Parent = char
@@ -528,6 +532,7 @@ createHazeToggle("Player ESP", Pages.Visuals, function(state)
     end
 end)
 
+-- Дропдаун для Legit Head ESP
 local legitHeadToggle = false
 _G.showThroughWalls = false
 local headPlayerConns = {}
@@ -619,7 +624,7 @@ DropdownContainer.MouseEnter:Connect(function()
     local tInfo = TweenInfo.new(0.2)
     TweenService:Create(MainLabel, tInfo, {TextColor3 = Color3.fromRGB(255,255,255)}):Play()
     TweenService:Create(DropdownContainer, tInfo, {BackgroundColor3 = Color3.fromRGB(25, 22, 34)}):Play()
-    TweenService:Create(dropStroke, tInfo, {Color = Theme.Visuals}):Play()
+    TweenService:Create(dropStroke, tInfo, {Color = Color3.fromRGB(255, 255, 255)}):Play()
     if not legitHeadToggle then
         TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255,255,255)}):Play()
         TweenService:Create(mainToggleStroke, tInfo, {Color = Color3.fromRGB(255,255,255)}):Play()
@@ -646,14 +651,9 @@ local function createLegitHeadESP(plr)
         if head then
             if head:FindFirstChild("LegitHeadGlow") then head.LegitHeadGlow:Destroy() end
             local sphere = Instance.new("BoxHandleAdornment")
-            sphere.Name = "LegitHeadGlow"
-            sphere.Adornee = head
-            sphere.Size = Vector3.new(1.3, 1.3, 1.3)
-            sphere.Color3 = Color3.fromRGB(0, 255, 120)
-            sphere.Transparency = 0.25
-            sphere.AlwaysOnTop = _G.showThroughWalls
-            sphere.ZIndex = 10
-            sphere.Parent = head
+            sphere.Name = "LegitHeadGlow"; sphere.Adornee = head; sphere.Size = Vector3.new(1.3, 1.3, 1.3)
+            sphere.Color3 = Color3.fromRGB(255, 255, 255); sphere.Transparency = 0.25
+            sphere.AlwaysOnTop = _G.showThroughWalls; sphere.ZIndex = 10; sphere.Parent = head
         end
     end
     if plr.Character then addHeadHighlight(plr.Character) end
@@ -665,8 +665,8 @@ MainToggleBg.MouseButton1Click:Connect(function()
     legitHeadToggle = not legitHeadToggle
     local tInfo = TweenInfo.new(0.2)
     if legitHeadToggle then
-        TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Theme.Visuals}):Play()
-        TweenService:Create(mainToggleStroke, tInfo, {Color = Theme.Visuals}):Play()
+        TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Theme.Accent}):Play()
+        TweenService:Create(mainToggleStroke, tInfo, {Color = Theme.Accent}):Play()
         TweenService:Create(MainBall, tInfo, {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         for _, plr in ipairs(game.Players:GetPlayers()) do createLegitHeadESP(plr) end
         local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
@@ -688,7 +688,7 @@ SubToggleBg.MouseButton1Click:Connect(function()
     _G.showThroughWalls = not _G.showThroughWalls
     local tInfo = TweenInfo.new(0.2)
     if _G.showThroughWalls then
-        TweenService:Create(SubToggleBg, tInfo, {BackgroundColor3 = Theme.Visuals}):Play()
+        TweenService:Create(SubToggleBg, tInfo, {BackgroundColor3 = Theme.Accent}):Play()
         TweenService:Create(SubBall, tInfo, {Position = UDim2.new(1, -15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
     else
         TweenService:Create(SubToggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(32, 30, 42)}):Play()
@@ -701,7 +701,7 @@ SubToggleBg.MouseButton1Click:Connect(function()
     end
 end)
 
-local isDropdownOpen = false
+isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
     isDropdownOpen = not isDropdownOpen
     local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -723,12 +723,9 @@ createHazeToggle("SupplyCrate Wallhack", Pages.Visuals, function(state)
             if not lootEspToggle then return end
             if obj.Name == "SupplyCrate" and not obj:FindFirstChild("LootHighlight") then
                 local highlight = Instance.new("Highlight")
-                highlight.Name = "LootHighlight"
-                highlight.FillColor = Theme.Visuals
-                highlight.FillTransparency = 0.5
-                highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Parent = obj
+                highlight.Name = "LootHighlight"; highlight.FillColor = Theme.Accent
+                highlight.FillTransparency = 0.5; highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop; highlight.Parent = obj
             end
         end
         for _, obj in ipairs(workspace:GetDescendants()) do applyCrateESP(obj) end
@@ -798,7 +795,7 @@ local function createLaserBeam(startPos, endPos)
     local distance = (endPos - startPos).Magnitude
     local laserPart = Instance.new("Part")
     laserPart.Name = "NYX_BulletLaser"; laserPart.Anchored = true; laserPart.CanCollide = false
-    laserPart.Material = Enum.Material.Neon; laserPart.Color = Color3.fromRGB(160, 60, 255)
+    laserPart.Material = Enum.Material.Neon; laserPart.Color = Theme.Accent
     laserPart.Size = Vector3.new(0.08, 0.08, distance)
     laserPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
     laserPart.Parent = workspace
@@ -825,7 +822,7 @@ local function trackWeaponFire()
     end
 end
 
-createHazeToggle("Bullet Tracers (Purple)", Pages.Visuals, function(state)
+createHazeToggle("Bullet Tracers (Accent)", Pages.Visuals, function(state)
     bulletTracersToggle = state
     if bulletTracersToggle then
         trackWeaponFire()
@@ -861,7 +858,7 @@ createHazeToggle("FullBright (No Darkness)", Pages.Visuals, function(state)
 end)
 
 -- ==========================================
--- ВКЛАДКА « COMBAT » (⚔️) И ЕСТЬ ЕЕ ФУНКЦИОНАЛ
+-- ВКЛАДКА « COMBAT » (⚔️) И ЕЁ ФУНКЦИОНАЛ
 -- ==========================================
 _G.aimbotToggle = false
 createHazeToggle("Aimbot Master", Pages.Combat, function(state)
@@ -878,13 +875,13 @@ SliderFrame.Parent = Pages.Combat; SliderFrame.BackgroundColor3 = Color3.fromRGB
 addCorners(SliderFrame, 4)
 
 local SliderButton = Instance.new("TextButton")
-SliderButton.Parent = SliderFrame; SliderButton.BackgroundColor3 = Theme.Combat; SliderButton.Size = UDim2.new(0, 14, 0, 14)
+SliderButton.Parent = SliderFrame; SliderButton.BackgroundColor3 = Theme.Accent; SliderButton.Size = UDim2.new(0, 14, 0, 14)
 SliderButton.Position = UDim2.new(0.3, -7, 0.5, -7); SliderButton.Text = ""
 addCorners(SliderButton, 7)
 
 local fovRadius = 100
 local fovCircle = Drawing.new("Circle")
-fovCircle.Visible = false; fovCircle.Color = Theme.Combat; fovCircle.Thickness = 1.2; fovCircle.NumSides = 64
+fovCircle.Visible = false; fovCircle.Color = Theme.Accent; fovCircle.Thickness = 1.2; fovCircle.NumSides = 64
 fovCircle.Radius = fovRadius; fovCircle.Filled = false; fovCircle.Transparency = 0.5
 shared.nyxFovCircle = fovCircle
 SliderLabel.Text = "FOV Limit: " .. fovRadius
@@ -967,13 +964,12 @@ local function getClosestPlayerInFOV()
     return closestPlayer
 end
 
--- Автоматическое наведение аима без зажатия клавиш
 RunService.RenderStepped:Connect(function()
     local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
     fovCircle.Position = screenCenter
     local currentActiveTab = _G.currentTab or "Combat"
     fovCircle.Visible = _G.aimbotToggle and MainFrame.Visible and (currentActiveTab == "Combat")
-    if _G.aimbotToggle then
+    if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
         local targetPart = getClosestPlayerInFOV()
         if targetPart then
             local currentCamCFrame = Camera.CFrame
@@ -984,9 +980,26 @@ RunService.RenderStepped:Connect(function()
 end)
 
 -- ==========================================
--- ВКЛАДКА « WORLD » (🌐) (Для будущих функций)
+-- ВКЛАДКА « SETTINGS » (⚙)
 -- ==========================================
-createHazeToggle("Speedhack (Placeholder)", Pages.World, function(state) end)
-createHazeToggle("Infinite Jump (Placeholder)", Pages.World, function(state) end)
+-- Версия скрипта (Текстовая метка бета)
+local VersionLabel = Instance.new("TextLabel")
+VersionLabel.Size = UDim2.new(1, 0, 0, 30)
+VersionLabel.BackgroundTransparency = 1
+VersionLabel.Text = "Version: 2.0.4-BETA"
+VersionLabel.TextColor3 = Theme.TextWhite
+VersionLabel.Font = Enum.Font.GothamBold
+VersionLabel.TextSize = 14
+VersionLabel.TextXAlignment = Enum.TextXAlignment.Left
+VersionLabel.Parent = Pages.Settings
 
-task.spawn(function() showTab("Combat") end)
+-- Тумблер для отключения яркого фиолетового цвета меню
+createHazeToggle("Disable Menu Color (Dark Border)", Pages.Settings, function(state)
+    _G.DisableMenuColor = state
+    updateMenuBorder()
+end)
+
+-- СТАРТ СИНХРОНИЗАЦИИ ИНТЕРФЕЙСА
+task.spawn(function()
+    showTab("Combat")
+end)
