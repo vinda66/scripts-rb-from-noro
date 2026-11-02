@@ -16,7 +16,19 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- Основа интерфейса
+-- Цветовая палитра категорий
+local Theme = {
+    Background = Color3.fromRGB(11, 10, 15),
+    Sidebar = Color3.fromRGB(7, 6, 9),
+    TextMuted = Color3.fromRGB(130, 125, 140),
+    TextWhite = Color3.fromRGB(255, 255, 255),
+    
+    -- Уникальные цвета для разделов
+    Combat = Color3.fromRGB(255, 65, 65),     -- Красный
+    Visuals = Color3.fromRGB(0, 255, 150),    -- Бирюзовый
+    World = Color3.fromRGB(255, 150, 0)       -- Оранжевый
+}
+
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SimpleModMenu"
 ScreenGui.ResetOnSpawn = false
@@ -36,13 +48,13 @@ local function addStroke(object, color, thickness, transparency)
     stroke.Transparency = transparency or 0
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Parent = object
+    return stroke
 end
 
 -- ==========================================
--- 🌌 ЗАГРУЗОЧНЫЙ ЭКРАН (ПРОЗРАЧНЫЙ)
+-- ЗАГРУЗОЧНЫЙ ЭКРАН
 -- ==========================================
 local LoadingScreen = Instance.new("Frame")
-LoadingScreen.Name = "LoadingScreen"
 LoadingScreen.Size = UDim2.new(1, 0, 1, 0)
 LoadingScreen.BackgroundTransparency = 1
 LoadingScreen.Parent = ScreenGui
@@ -51,59 +63,50 @@ local LoadingText = Instance.new("TextLabel")
 LoadingText.Size = UDim2.new(0, 300, 0, 30)
 LoadingText.Position = UDim2.new(0.5, -150, 0.5, -40)
 LoadingText.BackgroundTransparency = 1
-LoadingText.Text = "NYX LOADING..."
+LoadingText.Text = "NYX RGB HUB LOADING..."
 LoadingText.TextColor3 = Color3.fromRGB(255, 255, 255)
-LoadingText.TextSize = 22
+LoadingText.TextSize = 20
 LoadingText.Font = Enum.Font.GothamBold
-LoadingText.TextStrokeTransparency = 0.2
 LoadingText.Parent = LoadingScreen
 
 local BarBackground = Instance.new("Frame")
-BarBackground.Size = UDim2.new(0, 260, 0, 8)
+BarBackground.Size = UDim2.new(0, 260, 0, 6)
 BarBackground.Position = UDim2.new(0.5, -130, 0.5, 5)
-BarBackground.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
+BarBackground.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 BarBackground.Parent = LoadingScreen
 addCorners(BarBackground, 4)
-addStroke(BarBackground, Color3.fromRGB(138, 43, 226), 1)
+addStroke(BarBackground, Color3.fromRGB(100, 100, 110), 1)
 
 local ProgressBar = Instance.new("Frame")
 ProgressBar.Size = UDim2.new(0, 0, 1, 0)
-ProgressBar.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+ProgressBar.BackgroundColor3 = Theme.Visuals
 ProgressBar.Parent = BarBackground
 addCorners(ProgressBar, 4)
 
-local barTween = TweenService:Create(ProgressBar, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-    Size = UDim2.new(1, 0, 1, 0)
-})
+local barTween = TweenService:Create(ProgressBar, TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Size = UDim2.new(1, 0, 1, 0)})
 barTween:Play()
 barTween.Completed:Wait()
 
-task.wait(0.2)
-
-local fadeTween = TweenService:Create(LoadingText, TweenInfo.new(0.4), {TextTransparency = 1, TextStrokeTransparency = 1})
-TweenService:Create(BarBackground, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-TweenService:Create(ProgressBar, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-local strokeObj = BarBackground:FindFirstChildOfClass("UIStroke")
-if strokeObj then TweenService:Create(strokeObj, TweenInfo.new(0.4), {Transparency = 1}):Play() end
-
-fadeTween:Play()
-fadeTween.Completed:Wait()
+TweenService:Create(LoadingText, TweenInfo.new(0.3), {TextTransparency = 1}):Play()
+TweenService:Create(BarBackground, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+TweenService:Create(ProgressBar, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+task.wait(0.3)
 LoadingScreen:Destroy()
 
 -- ==========================================
--- ГЛАВНОЕ ОКНО (МОДЕРНИЗИРОВАННЫЙ НЕОН)
+-- ГЛАВНОЕ ОКНО
 -- ==========================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "ModMenu"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 9, 20)
+MainFrame.BackgroundColor3 = Theme.Background
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 530, 0, 370)
+MainFrame.Size = UDim2.new(0, 540, 0, 380)
 MainFrame.Active = true
 addCorners(MainFrame, 12)
-addStroke(MainFrame, Color3.fromRGB(55, 38, 85), 1.2)
+local MenuBorder = addStroke(MainFrame, Color3.fromRGB(45, 42, 55), 1.2)
 
--- Плавное и стабильное кастомное перетаскивание (Замена старого Draggable)
+-- Кастомное перетаскивание
 local dragToggle, dragStart, startPos
 local dragSpeed = 0.12
 
@@ -115,27 +118,20 @@ end
 
 MainFrame.InputBegan:Connect(function(input)
     if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-        dragToggle = true
-        dragStart = input.Position
-        startPos = MainFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
-        end)
+        dragToggle = true; dragStart = input.Position; startPos = MainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragToggle = false end end)
     end
 end)
-
 MainFrame.InputChanged:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        if dragToggle then updateInput(input) end
-    end
+    if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then updateInput(input) end
 end)
 
--- БОКОВАЯ ПАНЕЛЬ (Сайдбар)
+-- САЙДБАР
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Parent = MainFrame
-Sidebar.BackgroundColor3 = Color3.fromRGB(8, 6, 14)
-Sidebar.Size = UDim2.new(0, 145, 1, 0)
+Sidebar.BackgroundColor3 = Theme.Sidebar
+Sidebar.Size = UDim2.new(0, 150, 1, 0)
 addCorners(Sidebar, 12)
 
 local FixFrame = Instance.new("Frame")
@@ -145,7 +141,6 @@ FixFrame.BackgroundColor3 = Sidebar.BackgroundColor3
 FixFrame.BorderSizePixel = 0
 FixFrame.Parent = Sidebar
 
--- ЛОГОТИП И НАЗВАНИЕ В ОДНОЙ СТРОКЕ
 local LogoContainer = Instance.new("Frame")
 LogoContainer.Size = UDim2.new(1, 0, 0, 55)
 LogoContainer.BackgroundTransparency = 1
@@ -157,15 +152,12 @@ MenuIcon.BackgroundTransparency = 1
 MenuIcon.Position = UDim2.new(0, 14, 0, 16) 
 MenuIcon.Size = UDim2.new(0, 22, 0, 22)    
 MenuIcon.Image = "rbxasset://textures/DevConsole/scythe.png"
-MenuIcon.ImageColor3 = Color3.fromRGB(155, 85, 255)
+MenuIcon.ImageColor3 = Color3.fromRGB(255, 255, 255)
 
--- Безопасный цикл покачивания косы
 task.spawn(function()
     while true do
         if MainFrame and MenuIcon and MainFrame.Parent then
-            local speed = 2.5
-            local angle = 12
-            MenuIcon.Rotation = math.sin(tick() * speed) * angle
+            MenuIcon.Rotation = math.sin(tick() * 2.5) * 12
             task.wait()
         else break end
     end
@@ -177,12 +169,12 @@ Title.BackgroundTransparency = 1
 Title.Position = UDim2.new(0, 44, 0, 2) 
 Title.Size = UDim2.new(1, -44, 1, 0)
 Title.Text = "NYX Hub"
-Title.TextColor3 = Color3.fromRGB(245, 240, 255)
+Title.TextColor3 = Theme.TextWhite
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 
--- ПРОФИЛЬ ИГРОКА ВНИЗУ СЛЕВА
+-- ПРОФИЛЬ ИГРОКА
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(1, -16, 0, 48)
 ProfileFrame.Position = UDim2.new(0, 8, 1, -58)
@@ -202,8 +194,7 @@ addCorners(AvatarImage, 16)
 
 task.spawn(function()
     pcall(function()
-        local userId = LocalPlayer.UserId
-        local content, isReady = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
+        local content, isReady = Players:GetUserThumbnailAsync(LocalPlayer.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
         if isReady then AvatarImage.Image = content end
     end)
 end)
@@ -213,7 +204,7 @@ PlayerName.Size = UDim2.new(1, -50, 0, 15)
 PlayerName.Position = UDim2.new(0, 46, 0, 9)
 PlayerName.BackgroundTransparency = 1
 PlayerName.Text = LocalPlayer.DisplayName
-PlayerName.TextColor3 = Color3.fromRGB(240, 230, 255)
+PlayerName.TextColor3 = Theme.TextWhite
 PlayerName.Font = Enum.Font.GothamBold
 PlayerName.TextSize = 11
 PlayerName.TextXAlignment = Enum.TextXAlignment.Left
@@ -224,22 +215,21 @@ PlayerTag.Size = UDim2.new(1, -50, 0, 12)
 PlayerTag.Position = UDim2.new(0, 46, 0, 24)
 PlayerTag.BackgroundTransparency = 1
 PlayerTag.Text = "@" .. LocalPlayer.Name
-PlayerTag.TextColor3 = Color3.fromRGB(140, 125, 160)
+PlayerTag.TextColor3 = Theme.TextMuted
 PlayerTag.Font = Enum.Font.GothamSemibold
 PlayerTag.TextSize = 9
 PlayerTag.TextXAlignment = Enum.TextXAlignment.Left
 PlayerTag.Parent = ProfileFrame
 
--- ГЛАВНЫЙ КОНТЕЙНЕР ДЛЯ ВКЛАДОК
+-- КОНТЕЙНЕР ДЛЯ СТРАНИЦ
 local Container = Instance.new("Frame")
 Container.Name = "Container"
 Container.Parent = MainFrame
 Container.BackgroundTransparency = 1
-Container.Position = UDim2.new(0, 160, 0, 20)
-Container.Size = UDim2.new(1, -175, 1, -40)
+Container.Position = UDim2.new(0, 165, 0, 20)
+Container.Size = UDim2.new(1, -180, 1, -40)
 
 local Pages = {}
-
 local function createTabFrame(name)
     local page = Instance.new("ScrollingFrame")
     page.Name = name .. "Page"
@@ -247,7 +237,7 @@ local function createTabFrame(name)
     page.BackgroundTransparency = 1
     page.Visible = false
     page.ScrollBarThickness = 3
-    page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
+    page.ScrollBarImageColor3 = Color3.fromRGB(60, 60, 70)
     page.CanvasSize = UDim2.new(0, 0, 0, 0)
     page.Parent = Container
     
@@ -263,26 +253,22 @@ createTabFrame("Combat")
 createTabFrame("Visuals")
 createTabFrame("World")
 
--- СИСТЕМА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК
 _G.currentTab = "Combat"
 
 local function showTab(tabName)
     _G.currentTab = tabName
-    for name, page in pairs(Pages) do
-        page.Visible = (name == tabName)
-    end
+    for name, page in pairs(Pages) do page.Visible = (name == tabName) end
+    TweenService:Create(MenuBorder, TweenInfo.new(0.4), {Color = Theme[tabName]}):Play()
+    TweenService:Create(MenuIcon, TweenInfo.new(0.4), {ImageColor3 = Theme[tabName]}):Play()
+
     for _, btn in ipairs(Sidebar:GetChildren()) do
         if btn:IsA("TextButton") then
             if btn.Name == tabName .. "TabBtn" then
-                TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(42, 26, 75), BackgroundTransparency = 0}):Play()
-btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-local bStroke = btn:FindFirstChildOfClass("UIStroke")
-if bStroke then bStroke.Transparency = 0 end
-else
+                TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Theme[tabName], BackgroundTransparency = 0.2}):Play()
+                btn.TextColor3 = Theme.TextWhite
+            else
 TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(0,0,0), BackgroundTransparency = 1}):Play()
-btn.TextColor3 = Color3.fromRGB(145, 130, 165)
-local bStroke = btn:FindFirstChildOfClass("UIStroke")
-if bStroke then bStroke.Transparency = 1 end
+btn.TextColor3 = Theme.TextMuted
 end
 end
 end
@@ -290,10 +276,10 @@ if shared.nyxFovCircle then
 shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
 end
 end
--- ЛОГИКА СЖАТИЯ МЕНЮ В ПРАВЫЙ НИЖНИЙ УГОЛ
+-- СЖАТИЕ МЕНЮ (Кастомная логика анимации закрытия)
 local isMenuOpen = true
 local isTweening = false
-local normalSize = UDim2.new(0, 530, 0, 370)
+local normalSize = UDim2.new(0, 540, 0, 380)
 local normalPos = UDim2.new(0.3, 0, 0.25, 0)
 local function toggleMenuVisuals(open)
 if isTweening then return end
@@ -320,9 +306,7 @@ end
 isTweening = false
 end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
-toggleMenuVisuals(not isMenuOpen)
-end
+if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then toggleMenuVisuals(not isMenuOpen) end
 end)
 local tabCount = 0
 local function createTabButton(name, iconText)
@@ -331,25 +315,19 @@ btn.Name = name .. "TabBtn"
 btn.Parent = Sidebar
 btn.Size = UDim2.new(1, -16, 0, 36)
 btn.Position = UDim2.new(0, 8, 0, 65 + (tabCount * 42))
-btn.BackgroundColor3 = Color3.fromRGB(42, 26, 75)
+btn.BackgroundColor3 = Color3.fromRGB(0,0,0)
 btn.BackgroundTransparency = 1
 btn.Text = "  " .. iconText .. "   " .. name
-btn.TextColor3 = Color3.fromRGB(145, 130, 165)
+btn.TextColor3 = Theme.TextMuted
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 12
 btn.TextXAlignment = Enum.TextXAlignment.Left
 addCorners(btn, 6)
-addStroke(btn, Color3.fromRGB(85, 55, 145), 1, 1)
--- Эффекты наведения мыши (Hover)
 btn.MouseEnter:Connect(function()
-if _G.currentTab ~= name then
-TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(60, 40, 100), TextColor3 = Color3.fromRGB(200, 190, 220)}):Play()
-end
+if _G.currentTab ~= name then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.9, BackgroundColor3 = Theme[name], TextColor3 = Theme.TextWhite}):Play() end
 end)
 btn.MouseLeave:Connect(function()
-if _G.currentTab ~= name then
-TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(145, 130, 165)}):Play()
-end
+if _G.currentTab ~= name then TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Theme.TextMuted}):Play() end
 end)
 btn.MouseButton1Click:Connect(function() showTab(name) end)
 tabCount = tabCount + 1
@@ -357,21 +335,25 @@ end
 createTabButton("Combat", "⚔")
 createTabButton("Visuals", "👁")
 createTabButton("World", "🌐")
--- СОЗДАНИЕ СВИТЧЕЙ С КРАСИВЫМ ХОВЕРОМ
+-- ==========================================================
+-- УМНЫЙ КОНСТРУКТОР ТУМБЛЕРОВ С БЕЛОЙ АНИМАЦИЕЙ
+-- ==========================================================
 local function createHazeToggle(text, tabContainer, callback)
+local tabType = "Combat"
+if tabContainer == Pages.Visuals then tabType = "Visuals" elseif tabContainer == Pages.World then tabType = "World" end
+local accentColor = Theme[tabType]
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(1, 0, 0, 42)
-frame.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
-frame.BackgroundTransparency = 0.6
+frame.BackgroundColor3 = Color3.fromRGB(18, 16, 24)
 frame.Parent = tabContainer
 addCorners(frame, 6)
-addStroke(frame, Color3.fromRGB(45, 35, 65), 1, 0.5)
+local frameStroke = addStroke(frame, Color3.fromRGB(35, 32, 45), 1)
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, -60, 1, 0)
 label.Position = UDim2.new(0, 10, 0, 0)
 label.BackgroundTransparency = 1
 label.Text = text
-label.TextColor3 = Color3.fromRGB(230, 220, 245)
+label.TextColor3 = Color3.fromRGB(200, 195, 210)
 label.Font = Enum.Font.GothamSemibold
 label.TextSize = 13
 label.TextXAlignment = Enum.TextXAlignment.Left
@@ -379,32 +361,59 @@ label.Parent = frame
 local toggleBg = Instance.new("TextButton")
 toggleBg.Size = UDim2.new(0, 38, 0, 20)
 toggleBg.Position = UDim2.new(1, -48, 0.5, -10)
-toggleBg.BackgroundColor3 = Color3.fromRGB(40, 30, 55)
+toggleBg.BackgroundColor3 = Color3.fromRGB(32, 30, 42)
 toggleBg.Text = ""
 toggleBg.Parent = frame
 addCorners(toggleBg, 10)
-addStroke(toggleBg, Color3.fromRGB(65, 50, 90), 1)
+local toggleStroke = addStroke(toggleBg, Color3.fromRGB(55, 50, 70), 1)
 local ball = Instance.new("Frame")
 ball.Size = UDim2.new(0, 14, 0, 14)
 ball.Position = UDim2.new(0, 3, 0.5, -7)
-ball.BackgroundColor3 = Color3.fromRGB(160, 145, 180)
+ball.BackgroundColor3 = Color3.fromRGB(140, 135, 155)
 ball.Parent = toggleBg
 addCorners(ball, 7)
 local state = false
-frame.MouseEnter:Connect(function()
-TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.3, BackgroundColor3 = Color3.fromRGB(30, 22, 48)}):Play()
-end)
-frame.MouseLeave:Connect(function()
-TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.6, BackgroundColor3 = Color3.fromRGB(20, 16, 32)}):Play()
-end)
+local function updateVisuals(isHovering)
+local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+if isHovering then
+TweenService:Create(label, tInfo, {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(frame, tInfo, {BackgroundColor3 = Color3.fromRGB(25, 22, 34)}):Play()
+TweenService:Create(frameStroke, tInfo, {Color = accentColor}):Play()
+if not state then
+TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(toggleStroke, tInfo, {Color = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(ball, tInfo, {BackgroundColor3 = Color3.fromRGB(20, 20, 25)}):Play()
+else
+TweenService:Create(toggleStroke, tInfo, {Color = Color3.fromRGB(255, 255, 255)}):Play()
+end
+else
+TweenService:Create(label, tInfo, {TextColor3 = Color3.fromRGB(200, 195, 210)}):Play()
+TweenService:Create(frame, tInfo, {BackgroundColor3 = Color3.fromRGB(18, 16, 24)}):Play()
+TweenService:Create(frameStroke, tInfo, {Color = Color3.fromRGB(35, 32, 45)}):Play()
+if not state then
+TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(32, 30, 42)}):Play()
+TweenService:Create(toggleStroke, tInfo, {Color = Color3.fromRGB(55, 50, 70)}):Play()
+TweenService:Create(ball, tInfo, {BackgroundColor3 = Color3.fromRGB(140, 135, 155)}):Play()
+else
+TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = accentColor}):Play()
+TweenService:Create(toggleStroke, tInfo, {Color = accentColor}):Play()
+TweenService:Create(ball, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+end
+end
+end
+frame.MouseEnter:Connect(function() updateVisuals(true) end)
+frame.MouseLeave:Connect(function() updateVisuals(false) end)
 toggleBg.MouseButton1Click:Connect(function()
 state = not state
+local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 if state then
-TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(138, 43, 226)}):Play()
-TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = accentColor}):Play()
+TweenService:Create(toggleStroke, tInfo, {Color = accentColor}):Play()
+TweenService:Create(ball, tInfo, {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 else
-TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 55)}):Play()
-TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
+TweenService:Create(toggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(toggleStroke, tInfo, {Color = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(ball, tInfo, {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(20, 20, 25)}):Play()
 end
 callback(state)
 end)
@@ -419,7 +428,7 @@ end
 return "[Hands]"
 end
 -- ==========================================
--- В К Л А Д К А  « V I S U A L S » (👁)
+-- ВКЛАДКА « VISUALS » (👁) И ЕЁ ФУНКЦИОНАЛ
 -- ==========================================
 local espToggle = false
 local espConnections = {}
@@ -434,9 +443,9 @@ task.wait(0.1)
 if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
 local highlight = Instance.new("Highlight")
 highlight.Name = "ESPHighlight"
-highlight.FillColor = Color3.fromRGB(138, 43, 226)
+highlight.FillColor = Theme.Visuals
 highlight.FillTransparency = 0.6
-highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
+highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 highlight.Parent = char
 local head = char:WaitForChild("Head", 5)
 if head then
@@ -451,7 +460,7 @@ local nameLabel = Instance.new("TextLabel")
 nameLabel.Size = UDim2.new(1, 0, 0, 20)
 nameLabel.BackgroundTransparency = 1
 nameLabel.Text = plr.Name .. " [0m]"
-nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
+nameLabel.TextColor3 = Theme.TextWhite
 nameLabel.TextSize = 12
 nameLabel.Font = Enum.Font.GothamBold
 nameLabel.Parent = billboard
@@ -460,7 +469,7 @@ invLabel.Position = UDim2.new(0, 0, 0, 18)
 invLabel.Size = UDim2.new(1, 0, 0, 15)
 invLabel.BackgroundTransparency = 1
 invLabel.Text = getEquippedItem(plr)
-invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
+invLabel.TextColor3 = Color3.fromRGB(180, 185, 200)
 invLabel.TextSize = 10
 invLabel.Font = Enum.Font.GothamSemibold
 invLabel.Parent = billboard
@@ -497,17 +506,17 @@ end
 end
 end
 end)
+-- Дропдаун для Legit Head ESP
 local legitHeadToggle = false
 _G.showThroughWalls = false
 local headPlayerConns = {}
 local DropdownContainer = Instance.new("Frame")
 DropdownContainer.Size = UDim2.new(1, 0, 0, 42)
-DropdownContainer.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
-DropdownContainer.BackgroundTransparency = 0.6
+DropdownContainer.BackgroundColor3 = Color3.fromRGB(18, 16, 24)
 DropdownContainer.ClipsDescendants = true
 DropdownContainer.Parent = Pages.Visuals
 addCorners(DropdownContainer, 6)
-addStroke(DropdownContainer, Color3.fromRGB(45, 35, 65), 1, 0.5)
+local dropStroke = addStroke(DropdownContainer, Color3.fromRGB(35, 32, 45), 1)
 local MainToggleFrame = Instance.new("Frame")
 MainToggleFrame.Size = UDim2.new(1, 0, 0, 42)
 MainToggleFrame.BackgroundTransparency = 1
@@ -517,7 +526,7 @@ MainLabel.Size = UDim2.new(1, -90, 1, 0)
 MainLabel.Position = UDim2.new(0, 10, 0, 0)
 MainLabel.BackgroundTransparency = 1
 MainLabel.Text = "Legit Head ESP"
-MainLabel.TextColor3 = Color3.fromRGB(230, 220, 245)
+MainLabel.TextColor3 = Color3.fromRGB(200, 195, 210)
 MainLabel.Font = Enum.Font.GothamSemibold
 MainLabel.TextSize = 13
 MainLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -527,21 +536,22 @@ ArrowBtn.Size = UDim2.new(0, 24, 0, 24)
 ArrowBtn.Position = UDim2.new(1, -78, 0.5, -12)
 ArrowBtn.BackgroundTransparency = 1
 ArrowBtn.Text = "▼"
-ArrowBtn.TextColor3 = Color3.fromRGB(150, 135, 170)
+ArrowBtn.TextColor3 = Theme.TextMuted
 ArrowBtn.Font = Enum.Font.GothamBold
 ArrowBtn.TextSize = 12
 ArrowBtn.Parent = MainToggleFrame
 local MainToggleBg = Instance.new("TextButton")
 MainToggleBg.Size = UDim2.new(0, 38, 0, 20)
 MainToggleBg.Position = UDim2.new(1, -48, 0.5, -10)
-MainToggleBg.BackgroundColor3 = Color3.fromRGB(40, 30, 55)
+MainToggleBg.BackgroundColor3 = Color3.fromRGB(32, 30, 42)
 MainToggleBg.Text = ""
 MainToggleBg.Parent = MainToggleFrame
 addCorners(MainToggleBg, 10)
+local mainToggleStroke = addStroke(MainToggleBg, Color3.fromRGB(55, 50, 70), 1)
 local MainBall = Instance.new("Frame")
 MainBall.Size = UDim2.new(0, 14, 0, 14)
 MainBall.Position = UDim2.new(0, 3, 0.5, -7)
-MainBall.BackgroundColor3 = Color3.fromRGB(160, 145, 180)
+MainBall.BackgroundColor3 = Color3.fromRGB(140, 135, 155)
 MainBall.Parent = MainToggleBg
 addCorners(MainBall, 7)
 local SubToggleFrame = Instance.new("Frame")
@@ -554,7 +564,7 @@ SubLabel.Size = UDim2.new(1, -60, 1, 0)
 SubLabel.Position = UDim2.new(0, 20, 0, 0)
 SubLabel.BackgroundTransparency = 1
 SubLabel.Text = "Show Through Walls"
-SubLabel.TextColor3 = Color3.fromRGB(180, 170, 195)
+SubLabel.TextColor3 = Theme.TextMuted
 SubLabel.Font = Enum.Font.GothamSemibold
 SubLabel.TextSize = 12
 SubLabel.TextXAlignment = Enum.TextXAlignment.Left
@@ -562,16 +572,40 @@ SubLabel.Parent = SubToggleFrame
 local SubToggleBg = Instance.new("TextButton")
 SubToggleBg.Size = UDim2.new(0, 34, 0, 16)
 SubToggleBg.Position = UDim2.new(1, -48, 0.5, -8)
-SubToggleBg.BackgroundColor3 = Color3.fromRGB(40, 30, 50)
+SubToggleBg.BackgroundColor3 = Color3.fromRGB(32, 30, 42)
 SubToggleBg.Text = ""
 SubToggleBg.Parent = SubToggleFrame
 addCorners(SubToggleBg, 8)
+local subToggleStroke = addStroke(SubToggleBg, Color3.fromRGB(55, 50, 70), 1)
 local SubBall = Instance.new("Frame")
 SubBall.Size = UDim2.new(0, 10, 0, 10)
 SubBall.Position = UDim2.new(0, 3, 0.5, -5)
 SubBall.BackgroundColor3 = Color3.fromRGB(140, 130, 155)
 SubBall.Parent = SubToggleBg
 addCorners(SubBall, 5)
+-- Логика ховера для Дропдауна
+DropdownContainer.MouseEnter:Connect(function()
+local tInfo = TweenInfo.new(0.2)
+TweenService:Create(MainLabel, tInfo, {TextColor3 = Color3.fromRGB(255,255,255)}):Play()
+TweenService:Create(DropdownContainer, tInfo, {BackgroundColor3 = Color3.fromRGB(25, 22, 34)}):Play()
+TweenService:Create(dropStroke, tInfo, {Color = Theme.Visuals}):Play()
+if not legitHeadToggle then
+TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255,255,255)}):Play()
+TweenService:Create(mainToggleStroke, tInfo, {Color = Color3.fromRGB(255,255,255)}):Play()
+TweenService:Create(MainBall, tInfo, {BackgroundColor3 = Color3.fromRGB(20,20,25)}):Play()
+end
+end)
+DropdownContainer.MouseLeave:Connect(function()
+local tInfo = TweenInfo.new(0.2)
+TweenService:Create(MainLabel, tInfo, {TextColor3 = Color3.fromRGB(200, 195, 210)}):Play()
+TweenService:Create(DropdownContainer, tInfo, {BackgroundColor3 = Color3.fromRGB(18, 16, 24)}):Play()
+TweenService:Create(dropStroke, tInfo, {Color = Color3.fromRGB(35, 32, 45)}):Play()
+if not legitHeadToggle then
+TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(32, 30, 42)}):Play()
+TweenService:Create(mainToggleStroke, tInfo, {Color = Color3.fromRGB(55, 50, 70)}):Play()
+TweenService:Create(MainBall, tInfo, {BackgroundColor3 = Color3.fromRGB(140, 135, 155)}):Play()
+end
+end)
 local function createLegitHeadESP(plr)
 if plr == game.Players.LocalPlayer then return end
 local function addHeadHighlight(char)
@@ -594,32 +628,46 @@ if plr.Character then addHeadHighlight(plr.Character) end
 local conn = plr.CharacterAdded:Connect(addHeadHighlight)
 table.insert(headPlayerConns, conn)
 end
-local function updateAllHeads()
-for _, plr in ipairs(game.Players:GetPlayers()) do
-if plr ~= LocalPlayer and plr.Character then
-local head = plr.Character:FindFirstChild("Head")
-if head and head:FindFirstChild("LegitHeadGlow") then
-head.LegitHeadGlow.AlwaysOnTop = _G.showThroughWalls
-end
-end
-end
-end
-local function clearLegitHeadESP()
+MainToggleBg.MouseButton1Click:Connect(function()
+legitHeadToggle = not legitHeadToggle
+local tInfo = TweenInfo.new(0.2)
+if legitHeadToggle then
+TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Theme.Visuals}):Play()
+TweenService:Create(mainToggleStroke, tInfo, {Color = Theme.Visuals}):Play()
+TweenService:Create(MainBall, tInfo, {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+for _, plr in ipairs(game.Players:GetPlayers()) do createLegitHeadESP(plr) end
+local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
+table.insert(headPlayerConns, pAdded)
+else
+TweenService:Create(MainToggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(MainBall, tInfo, {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(20, 20, 25)}):Play()
 for _, conn in ipairs(headPlayerConns) do if conn then conn:Disconnect() end end
 headPlayerConns = {}
 for _, plr in ipairs(game.Players:GetPlayers()) do
-if plr.Character then
-local head = plr.Character:FindFirstChild("Head")
-if head then
-local glow = head:FindFirstChild("LegitHeadGlow")
-if glow then glow:Destroy() end
+if plr.Character and plr.Character:FindFirstChild("Head") and plr.Character.Head:FindFirstChild("LegitHeadGlow") then
+plr.Character.Head.LegitHeadGlow:Destroy()
 end
 end
 end
+end)
+SubToggleBg.MouseButton1Click:Connect(function()
+_G.showThroughWalls = not _G.showThroughWalls
+local tInfo = TweenInfo.new(0.2)
+if _G.showThroughWalls then
+TweenService:Create(SubToggleBg, tInfo, {BackgroundColor3 = Theme.Visuals}):Play()
+TweenService:Create(SubBall, tInfo, {Position = UDim2.new(1, -15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+else
+TweenService:Create(SubToggleBg, tInfo, {BackgroundColor3 = Color3.fromRGB(32, 30, 42)}):Play()
+TweenService:Create(SubBall, tInfo, {Position = UDim2.new(0, 3, 0.5, -5), BackgroundColor3 = Color3.fromRGB(140, 130, 155)}):Play()
 end
+for _, plr in ipairs(game.Players:GetPlayers()) do
+if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") and plr.Character.Head:FindFirstChild("LegitHeadGlow") then
+plr.Character.Head.LegitHeadGlow.AlwaysOnTop = _G.showThroughWalls
+end
+end
+end)
 local isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
-if isTweening then return end
 isDropdownOpen = not isDropdownOpen
 local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 if isDropdownOpen then
@@ -630,31 +678,7 @@ TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, 0, 0, 42)}):P
 TweenService:Create(ArrowBtn, tInfo, {Rotation = 0}):Play()
 end
 end)
-MainToggleBg.MouseButton1Click:Connect(function()
-legitHeadToggle = not legitHeadToggle
-if legitHeadToggle then
-TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(138, 43, 226)}):Play()
-TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-for _, plr in ipairs(game.Players:GetPlayers()) do createLegitHeadESP(plr) end
-local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
-table.insert(headPlayerConns, pAdded)
-else
-TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 55)}):Play()
-TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
-clearLegitHeadESP()
-end
-end)
-SubToggleBg.MouseButton1Click:Connect(function()
-_G.showThroughWalls = not _G.showThroughWalls
-if _G.showThroughWalls then
-TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(138, 43, 226)}):Play()
-TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-else
-TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 50)}):Play()
-TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -5), BackgroundColor3 = Color3.fromRGB(140, 130, 155)}):Play()
-end
-updateAllHeads()
-end)
+-- Остальные функции вкладки Visuals
 local lootEspToggle = false
 local lootConnections = {}
 createHazeToggle("SupplyCrate Wallhack", Pages.Visuals, function(state)
@@ -662,13 +686,12 @@ lootEspToggle = state
 if lootEspToggle then
 local function applyCrateESP(obj)
 if not lootEspToggle then return end
-if obj.Name ~= "SupplyCrate" then return end
-if not obj:FindFirstChild("LootHighlight") then
+if obj.Name == "SupplyCrate" and not obj:FindFirstChild("LootHighlight") then
 local highlight = Instance.new("Highlight")
 highlight.Name = "LootHighlight"
-highlight.FillColor = Color3.fromRGB(138, 43, 226)
+highlight.FillColor = Theme.Visuals
 highlight.FillTransparency = 0.5
-highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
+highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
 highlight.Parent = obj
 end
@@ -680,9 +703,7 @@ else
 for _, conn in ipairs(lootConnections) do if conn then conn:Disconnect() end end
 lootConnections = {}
 for _, obj in ipairs(workspace:GetDescendants()) do
-if obj.Name == "SupplyCrate" and obj:FindFirstChild("LootHighlight") then
-obj.LootHighlight:Destroy()
-end
+if obj.Name == "SupplyCrate" and obj:FindFirstChild("LootHighlight") then obj.LootHighlight:Destroy() end
 end
 end
 end)
@@ -700,19 +721,15 @@ if head then
 local attachmentStart = Instance.new("Attachment")
 attachmentStart.Parent = head
 local endPart = Instance.new("Part")
-endPart.Name = "TracerEndPart"
-endPart.Size = Vector3.new(0.1, 0.1, 0.1)
-endPart.Transparency = 1; endPart.CanCollide = false; endPart.Anchored = true
-endPart.Parent = char
+endPart.Name = "TracerEndPart"; endPart.Size = Vector3.new(0.1, 0.1, 0.1)
+endPart.Transparency = 1; endPart.CanCollide = false; endPart.Anchored = true; endPart.Parent = char
 local attachmentEnd = Instance.new("Attachment")
 attachmentEnd.Parent = endPart
 local beam = Instance.new("Beam")
-beam.FaceCamera = true
-beam.Width0 = 0.16; beam.Width1 = 0.04
+beam.FaceCamera = true; beam.Width0 = 0.16; beam.Width1 = 0.04
 beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
 beam.Transparency = NumberSequence.new(0.0, 0.6)
-beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd
-beam.Parent = head
+beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd; beam.Parent = head
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
 if char and char.Parent and head and endPart and beam then
@@ -732,9 +749,7 @@ else
 for _, conn in ipairs(tracerObjects) do if conn then conn:Disconnect() end end
 tracerObjects = {}
 for _, plr in ipairs(game.Players:GetPlayers()) do
-if plr.Character and plr.Character:FindFirstChild("TracerEndPart") then
-plr.Character.TracerEndPart:Destroy()
-end
+if plr.Character and plr.Character:FindFirstChild("TracerEndPart") then plr.Character.TracerEndPart:Destroy() end
 end
 end
 end)
@@ -744,21 +759,13 @@ local weaponConnection = nil
 local function createLaserBeam(startPos, endPos)
 local distance = (endPos - startPos).Magnitude
 local laserPart = Instance.new("Part")
-laserPart.Name = "NYX_BulletLaser"
-laserPart.Anchored = true
-laserPart.CanCollide = false
-laserPart.Material = Enum.Material.Neon
-laserPart.Color = Color3.fromRGB(160, 60, 255)
+laserPart.Name = "NYX_BulletLaser"; laserPart.Anchored = true; laserPart.CanCollide = false
+laserPart.Material = Enum.Material.Neon; laserPart.Color = Color3.fromRGB(160, 60, 255)
 laserPart.Size = Vector3.new(0.08, 0.08, distance)
 laserPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
 laserPart.Parent = workspace
-TweenService:Create(laserPart, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-Size = Vector3.new(0, 0, distance),
-Transparency = 1
-}):Play()
-pcall(function()
+TweenService:Create(laserPart, TweenInfo.new(0.4), {Size = Vector3.new(0, 0, distance), Transparency = 1}):Play()
 game:GetService("Debris"):AddItem(laserPart, 0.4)
-end)
 end
 local function trackWeaponFire()
 if weaponConnection then weaponConnection:Disconnect() end
@@ -787,23 +794,18 @@ local char = LocalPlayer.Character
 if char then
 local currentTool = char:FindFirstChildOfClass("Tool")
 if currentTool and currentTool ~= lastActiveWeapon then
-lastActiveWeapon = currentTool
-trackWeaponFire()
+lastActiveWeapon = currentTool; trackWeaponFire()
 end
 end
 end)
-elseif weaponConnection then
-weaponConnection:Disconnect()
-end
+elseif weaponConnection then weaponConnection:Disconnect() end
 end)
 local fullBrightToggle = false
 local oldAmbient, oldColorShift, oldOutdoorAmbient
 createHazeToggle("FullBright (No Darkness)", Pages.Visuals, function(state)
 fullBrightToggle = state
 if fullBrightToggle then
-oldAmbient = Lighting.Ambient
-oldColorShift = Lighting.ColorShift_Top
-oldOutdoorAmbient = Lighting.OutdoorAmbient
+oldAmbient = Lighting.Ambient; oldColorShift = Lighting.ColorShift_Top; oldOutdoorAmbient = Lighting.OutdoorAmbient
 RunService:BindToRenderStep("FullBrightLoop", 100, function()
 Lighting.Ambient = Color3.fromRGB(255, 255, 255)
 Lighting.ColorShift_Top = Color3.fromRGB(255, 255, 255)
@@ -812,154 +814,140 @@ end)
 else
 RunService:UnbindFromRenderStep("FullBrightLoop")
 if oldAmbient then
-Lighting.Ambient = oldAmbient
-Lighting.ColorShift_Top = oldColorShift
-Lighting.OutdoorAmbient = oldOutdoorAmbient
+Lighting.Ambient = oldAmbient; Lighting.ColorShift_Top = oldColorShift; Lighting.OutdoorAmbient = oldOutdoorAmbient
 end
 end
 end)
+---
+
+### 📥 ЧАСТЬ 2: Вкладка COMBAT, WORLD и Рендеринг Систем Аима
+
+Скопируй этот блок и вставь его в инжектор **сразу же под первой частью**, без пропусков:
+
+```lua
 -- ==========================================
--- В К Л А Д К А  « C O M B A T » (⚔️)
+-- ВКЛАДКА « COMBAT » (⚔️) И ЕЁ ФУНКЦИОНАЛ
 -- ==========================================
 _G.aimbotToggle = false
 createHazeToggle("Aimbot Master", Pages.Combat, function(state)
-_G.aimbotToggle = state
+    _G.aimbotToggle = state
 end)
+
 local SliderLabel = Instance.new("TextLabel")
-SliderLabel.Parent = Pages.Combat
-SliderLabel.BackgroundTransparency = 1
-SliderLabel.Size = UDim2.new(1, 0, 0, 20)
-SliderLabel.Font = Enum.Font.GothamSemibold
-SliderLabel.TextColor3 = Color3.fromRGB(180, 165, 200)
-SliderLabel.TextSize = 12
+SliderLabel.Parent = Pages.Combat; SliderLabel.BackgroundTransparency = 1; SliderLabel.Size = UDim2.new(1, 0, 0, 20)
+SliderLabel.Font = Enum.Font.GothamSemibold; SliderLabel.TextColor3 = Color3.fromRGB(180, 165, 200); SliderLabel.TextSize = 12
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+
 local SliderFrame = Instance.new("Frame")
-SliderFrame.Parent = Pages.Combat
-SliderFrame.BackgroundColor3 = Color3.fromRGB(40, 30, 60)
-SliderFrame.Size = UDim2.new(1, -20, 0, 8)
+SliderFrame.Parent = Pages.Combat; SliderFrame.BackgroundColor3 = Color3.fromRGB(40, 30, 60); SliderFrame.Size = UDim2.new(1, -20, 0, 8)
 addCorners(SliderFrame, 4)
+
 local SliderButton = Instance.new("TextButton")
-SliderButton.Parent = SliderFrame
-SliderButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-SliderButton.Size = UDim2.new(0, 14, 0, 14)
-SliderButton.Position = UDim2.new(0.3, -7, 0.5, -7)
-SliderButton.Text = ""
+SliderButton.Parent = SliderFrame; SliderButton.BackgroundColor3 = Theme.Combat; SliderButton.Size = UDim2.new(0, 14, 0, 14)
+SliderButton.Position = UDim2.new(0.3, -7, 0.5, -7); SliderButton.Text = ""
 addCorners(SliderButton, 7)
+
 local fovRadius = 100
 local fovCircle = Drawing.new("Circle")
-fovCircle.Visible = false
-fovCircle.Color = Color3.fromRGB(138, 43, 226)
-fovCircle.Thickness = 1.2
-fovCircle.NumSides = 64
-fovCircle.Radius = fovRadius
-fovCircle.Filled = false
-fovCircle.Transparency = 0.5
+fovCircle.Visible = false; fovCircle.Color = Theme.Combat; fovCircle.Thickness = 1.2; fovCircle.NumSides = 64
+fovCircle.Radius = fovRadius; fovCircle.Filled = false; fovCircle.Transparency = 0.5
 shared.nyxFovCircle = fovCircle
 SliderLabel.Text = "FOV Limit: " .. fovRadius
+
 local isDraggingSlider = false
-SliderButton.InputBegan:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = true end
-end)
-UserInputService.InputEnded:Connect(function(input)
-if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = false end
-end)
+SliderButton.InputBegan:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = true end end)
+UserInputService.InputEnded:Connect(function(input) if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = false end end)
 UserInputService.InputChanged:Connect(function(input)
-if isDraggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
-local mousePos = UserInputService:GetMouseLocation()
-local relativeX = mousePos.X - SliderFrame.AbsolutePosition.X
-local percentage = math.clamp(relativeX / SliderFrame.AbsoluteSize.X, 0, 1)
-SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
-fovRadius = math.round(percentage * 300)
-fovCircle.Radius = fovRadius
-SliderLabel.Text = "FOV Limit: " .. fovRadius
-end
+    if isDraggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local mousePos = UserInputService:GetMouseLocation()
+        local relativeX = mousePos.X - SliderFrame.AbsolutePosition.X
+        local percentage = math.clamp(relativeX / SliderFrame.AbsoluteSize.X, 0, 1)
+        SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
+        fovRadius = math.round(percentage * 300)
+        fovCircle.Radius = fovRadius
+        SliderLabel.Text = "FOV Limit: " .. fovRadius
+    end
 end)
--- ==========================================
--- ИСПРАВЛЕННЫЙ И ОПТИМАЛЬНЫЙ ТРИГГЕРБОТ
--- ==========================================
+
 local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
-triggerBotToggle = state
+    triggerBotToggle = state
 end)
+
 RunService.RenderStepped:Connect(function()
-if not triggerBotToggle or not LocalPlayer.Character then return end
-local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-if not tool then return end
-local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
-if result and result.Instance and result.Instance.Parent then
-local model = result.Instance.Parent
--- Поиск Humanoid для работы со здоровьем и подтверждения живого игрока
-local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
-if humanoid and humanoid.Health > 0 then
--- Получаем объект игрока из модели (по его нику в workspace)
-local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
-if targetPlayer and targetPlayer ~= LocalPlayer then
--- Проверка на команду (Team Check)
-if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
-return
-end
--- Совершаем выстрел
-pcall(function()
-tool:Activate()
+    if not triggerBotToggle or not LocalPlayer.Character then return end
+    local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if not tool then return end
+    local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
+    if result and result.Instance and result.Instance.Parent then
+        local model = result.Instance.Parent
+        local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
+        if humanoid and humanoid.Health > 0 then
+            local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
+            if targetPlayer and targetPlayer ~= LocalPlayer then
+                if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then return end
+                pcall(function() tool:Activate() end)
+            end
+        end
+    end
 end)
-end
-end
-end
-end)
--- Системный расчет наводки аимбота
+
+-- Расчеты наводки Аимбота
 local Smoothness = 0.25
 local function isVisible(targetPart)
-local character = LocalPlayer.Character
-if not character then return false end
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-local origin = Camera.CFrame.Position
-local direction = targetPart.Position - origin
-local raycastResult = workspace:Raycast(origin, direction, raycastParams)
-return raycastResult == nil
+    local character = LocalPlayer.Character
+    if not character then return false end
+    local raycastParams = RaycastParams.new()
+    raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
+    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+    local origin = Camera.CFrame.Position
+    local direction = targetPart.Position - origin
+    return workspace:Raycast(origin, direction, raycastParams) == nil
 end
+
 local function getClosestPlayerInFOV()
-local closestPlayer = nil
-local shortestDistance = math.huge
-local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return nil end
-for _, player in ipairs(game.Players:GetPlayers()) do
-if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
-if onScreen then
-local magnitude = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
-if magnitude < fovRadius and magnitude < shortestDistance then
-if isVisible(player.Character.Head) then
-closestPlayer = player
-shortestDistance = magnitude
+    local closestPlayer = nil; local shortestDistance = math.huge
+    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return nil end
+    for _, player in ipairs(game.Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
+            if onScreen then
+                local magnitude = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
+                if magnitude < fovRadius and magnitude < shortestDistance then
+                    if isVisible(player.Character.Head) then closestPlayer = player; shortestDistance = magnitude end
+                end
+            end
+        end
+    end
+    return closestPlayer
 end
-end
-end
-end
-end
-return closestPlayer
-end
--- Потоковый рендер FOV круга и зажатия Left Control
+
 RunService.RenderStepped:Connect(function()
-local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-fovCircle.Position = screenCenter
-local currentActiveTab = _G.currentTab or "Combat"
-fovCircle.Visible = _G.aimbotToggle and MainFrame.Visible and (currentActiveTab == "Combat")
-if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-local target = getClosestPlayerInFOV()
-if target and target.Character and target.Character:FindFirstChild("Head") then
-local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
-end
-end
+    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+    fovCircle.Position = screenCenter
+    local currentActiveTab = _G.currentTab or "Combat"
+    fovCircle.Visible = _G.aimbotToggle and MainFrame.Visible and (currentActiveTab == "Combat")
+    if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        local target = getClosestPlayerInFOV()
+        if target and target.Character and target.Character:FindFirstChild("Head") then
+            local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
+        end
+    end
 end)
--- Старт скрипта
+
+-- ==========================================
+-- ВКЛАДКА « WORLD » (🌐) (Для будущих функций)
+-- ==========================================
+createHazeToggle("Speedhack (Placeholder)", Pages.World, function(state) end)
+createHazeToggle("Infinite Jump (Placeholder)", Pages.World, function(state) end)
+
+-- СТАРТ СИНХРОНИЗАЦИИ ИНТЕРФЕЙСА
 task.spawn(function()
-showTab("Combat")
-toggleMenuVisuals(true)
+    showTab("Combat")
 end)
