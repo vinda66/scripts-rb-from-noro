@@ -129,14 +129,15 @@ fadeTween.Completed:Wait()
 LoadingScreen:Destroy()
 
 -- ==========================================
--- 👁️ ОТДЕЛЬНАЯ НЕЗАВИСИМАЯ ИНФО-ПОЛОСКА
+-- 👁️ ИНФО-ПОЛОСКА (ЗАКРЕПЛЕНА НАВЕРХУ ПО ЦЕНТРУ)
 -- ==========================================
 local InfoBarFrame = Instance.new("Frame")
 InfoBarFrame.Name = "NYX_InfoBar"
 InfoBarFrame.Size = UDim2.new(0, 150, 0, 32)
-InfoBarFrame.Position = UDim2.new(0.5, -75, 0, 10) -- Сверху по центру экрана по умолчанию
+-- AnchorPoint (0.5, 0) позволяет ровно центрировать по X относительно экрана
+InfoBarFrame.AnchorPoint = Vector2.new(0.5, 0)
+InfoBarFrame.Position = UDim2.new(0.5, 0, 0, 10) 
 InfoBarFrame.BackgroundColor3 = Theme.Background
-InfoBarFrame.Active = true
 addCorners(InfoBarFrame, 8)
 addStroke(InfoBarFrame, Color3.fromRGB(55, 42, 80), 1.2)
 InfoBarFrame.Parent = ScreenGui
@@ -149,7 +150,7 @@ EyeIcon.Text = "👁️"
 EyeIcon.TextColor3 = Theme.Primary
 EyeIcon.Font = Enum.Font.GothamBold
 EyeIcon.TextSize = 14
-EyeIcon.TextVAlignment = Enum.TextVAlignment.Center
+EyeIcon.TextYAlignment = Enum.TextYAlignment.Center -- ИСПРАВЛЕНО С TextVAlignment
 EyeIcon.Parent = InfoBarFrame
 table.insert(ThemeObjects.Accents, EyeIcon)
 
@@ -176,25 +177,6 @@ task.spawn(function()
             local ping = math.round(Stats.Network.ServerToClientPing * 1000)
             StreamLabel.Text = string.format("FPS: %d | %dms", fpsCount, ping)
         else break end
-    end
-end)
-
--- Сделаем инфо-полоску тоже перетаскиваемой, чтобы её можно было вешать куда угодно
-local barDragToggle, barDragStart, barStartPos
-InfoBarFrame.InputBegan:Connect(function(input)
-    if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) then
-        barDragToggle = true
-        barDragStart = input.Position
-        barStartPos = InfoBarFrame.Position
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then barDragToggle = false end
-        end)
-    end
-end)
-InfoBarFrame.InputChanged:Connect(function(input)
-    if barDragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local delta = input.Position - barDragStart
-        InfoBarFrame.Position = UDim2.new(barStartPos.X.Scale, barStartPos.X.Offset + delta.X, barStartPos.Y.Scale, barStartPos.Y.Offset + delta.Y)
     end
 end)
 
@@ -267,26 +249,29 @@ MenuIcon.Size = UDim2.new(0, 22, 0, 22)
 MenuIcon.Image = "rbxasset://textures/DevConsole/scythe.png"
 MenuIcon.ImageColor3 = Theme.Primary
 table.insert(ThemeObjects.Accents, MenuIcon)
+
 task.spawn(function()
-while true do
-if MainFrame and MenuIcon and MainFrame.Parent then
-local speed = 2.5
-local angle = 12
-MenuIcon.Rotation = math.sin(tick() * speed) * angle
-task.wait()
-else break end
-end
+    while true do
+        if MainFrame and MenuIcon and MainFrame.Parent then
+            local speed = 2.5
+            local angle = 12
+            MenuIcon.Rotation = math.sin(tick() * speed) * angle
+            task.wait()
+        else break end
+    end
 end)
+
 local Title = Instance.new("TextLabel")
 Title.Parent = LogoContainer
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 48, 0, 2)
+Title.Position = UDim2.new(0, 48, 0, 2) 
 Title.Size = UDim2.new(1, -48, 1, 0)
 Title.Text = "NYX HUB"
 Title.TextColor3 = Theme.TextMain
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
+
 -- ПРОФИЛЬ ИГРОКА СЛЕВА
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(1, -16, 0, 48)
@@ -384,10 +369,10 @@ if shared.nyxFovCircle then
 shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
 end
 end
---ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ (Back анимация)
+-- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
 local isMenuOpen = true
 local isTweening = false
-local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0) -- Сохраняет положение меню перед закрытием
+local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0)
 local normalSize = UDim2.new(0, 550, 0, 390)
 local function toggleMenuVisuals(open)
 if isTweening then return end
@@ -396,14 +381,13 @@ local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out
 if open then
 MainFrame.Visible = true
 if shared.nyxFovCircle then shared.nyxFovCircle.Visible = (_G.currentTab == "Combat") and _G.aimbotToggle end
--- Меню эффектно раскрывается обратно из координат инфо-полоски
 TweenService:Create(MainFrame, tInfo, {Size = normalSize, Position = lastSavedPos, BackgroundTransparency = 0}):Play()
 task.wait(0.4)
 isMenuOpen = true
 else
 if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
-lastSavedPos = MainFrame.Position -- Запоминаем, где стояло окно
--- Анимация сжатия меню и перелёта в точку инфо-бара
+lastSavedPos = MainFrame.Position
+-- Перелет и схлопывание в координаты верхней инфо-полоски
 local targetPos = InfoBarFrame.Position
 local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
 collapseTween:Play()
@@ -565,7 +549,7 @@ invLabel.Font = Enum.Font.GothamSemibold
 invLabel.Parent = billboard
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
-if espToggle and char and char.Parent and head and billboard and nameLabel and invLabel and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+if espToggle and char and char.Parent mixin and head and billboard and nameLabel and invLabel and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
 local distanceEnd = (head.Position - LocalPlayer.Character.Head.Position).Magnitude
 local distanceMeters = math.round(distanceEnd / 3.5)
 nameLabel.Text = plr.Name .. " [" .. tostring(distanceMeters) .. "m]"
