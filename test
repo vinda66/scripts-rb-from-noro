@@ -274,7 +274,7 @@ local function showTab(tabName)
     for _, btn in ipairs(Sidebar:GetChildren()) do
         if btn:IsA("TextButton") then
             if btn.Name == tabName .. "TabBtn" then
-TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(42, 26, 75), BackgroundTransparency = 0}):Play()
+                TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(42, 26, 75), BackgroundTransparency = 0}):Play()
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 local bStroke = btn:FindFirstChildOfClass("UIStroke")
 if bStroke then bStroke.Transparency = 0 end
@@ -881,12 +881,10 @@ local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
--- Рендер-поток для стабильного автовыстрела в любых условиях прицеливания
 RunService.RenderStepped:Connect(function()
--- Fast Exit: Завершаем работу, если триггер выключен или персонаж мертв
 if not triggerBotToggle or not LocalPlayer.Character then return end
 local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-if not tool then return end -- Выходим, если в руках нет оружия
+if not tool then return end
 local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
 local raycastParams = RaycastParams.new()
 raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
@@ -894,8 +892,10 @@ raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
 if result and result.Instance and result.Instance.Parent then
 local model = result.Instance.Parent
+-- Поиск Humanoid для работы со здоровьем и подтверждения живого игрока
 local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
 if humanoid and humanoid.Health > 0 then
+-- Получаем объект игрока из модели (по его нику в workspace)
 local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
 if targetPlayer and targetPlayer ~= LocalPlayer then
 -- Проверка на команду (Team Check)
