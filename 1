@@ -129,11 +129,11 @@ fadeTween.Completed:Wait()
 LoadingScreen:Destroy()
 
 -- ==========================================
--- 👁️ ИНФО-ПОЛОСКА (ЗАКРЕПЛЕНА НАВЕРХУ ПО ЦЕНТРУ)
+-- 👁️ КОМПАКТНАЯ ПОЛОСКА СО ЗНАЧКОМ (ВВЕРХУ ПО ЦЕНТРУ)
 -- ==========================================
 local InfoBarFrame = Instance.new("Frame")
 InfoBarFrame.Name = "NYX_InfoBar"
-InfoBarFrame.Size = UDim2.new(0, 150, 0, 32)
+InfoBarFrame.Size = UDim2.new(0, 44, 0, 32) -- Сделал её маленькой под размер значка
 InfoBarFrame.AnchorPoint = Vector2.new(0.5, 0)
 InfoBarFrame.Position = UDim2.new(0.5, 0, 0, 10) 
 InfoBarFrame.BackgroundColor3 = Theme.Background
@@ -142,52 +142,17 @@ addStroke(InfoBarFrame, Color3.fromRGB(55, 42, 80), 1.2)
 InfoBarFrame.Parent = ScreenGui
 
 local EyeIcon = Instance.new("TextLabel")
-EyeIcon.Size = UDim2.new(0, 25, 1, 0)
-EyeIcon.Position = UDim2.new(0, 8, 0, 0)
+EyeIcon.Size = UDim2.new(1, 0, 1, 0) -- Растянут на всю плашку ровно по центру
+EyeIcon.Position = UDim2.new(0, 0, 0, 0)
 EyeIcon.BackgroundTransparency = 1
 EyeIcon.Text = "👁️"
 EyeIcon.TextColor3 = Theme.Primary
 EyeIcon.Font = Enum.Font.GothamBold
-EyeIcon.TextSize = 14
+EyeIcon.TextSize = 16
+EyeIcon.TextXAlignment = Enum.TextXAlignment.Center
 EyeIcon.TextYAlignment = Enum.TextYAlignment.Center
 EyeIcon.Parent = InfoBarFrame
 table.insert(ThemeObjects.Accents, EyeIcon)
-
-local StreamLabel = Instance.new("TextLabel")
-StreamLabel.Size = UDim2.new(1, -38, 1, 0)
-StreamLabel.Position = UDim2.new(0, 33, 0, 0)
-StreamLabel.BackgroundTransparency = 1
-StreamLabel.Text = "FPS: -- | PING: --"
-StreamLabel.TextColor3 = Theme.TextMain
-StreamLabel.Font = Enum.Font.GothamBold
-StreamLabel.TextSize = 11
-StreamLabel.TextXAlignment = Enum.TextXAlignment.Left
-StreamLabel.TextYAlignment = Enum.TextYAlignment.Center
-StreamLabel.Parent = InfoBarFrame
-
--- Мониторинг FPS и Пинга
-local lastUpdate = 0
-local frameCount = 0
-local currentFPS = 60
-
-RunService.Heartbeat:Connect(function(step)
-    frameCount = frameCount + 1
-    lastUpdate = lastUpdate + step
-    
-    if lastUpdate >= 0.5 then 
-        currentFPS = math.round(frameCount / lastUpdate)
-        frameCount = 0
-        lastUpdate = 0
-        
-        if InfoBarFrame and InfoBarFrame.Parent then
-            local rawPing = Stats.Network.ServerToClientPing
-            local currentPing = math.round(rawPing * 1000)
-            
-            if currentPing < 0 or currentPing > 5000 then currentPing = 0 end
-            StreamLabel.Text = string.format("FPS: %d | %dms", currentFPS, currentPing)
-        end
-    end
-end)
 
 -- ==========================================
 -- ГЛАВНОЕ ОКНО
@@ -291,6 +256,7 @@ ProfileFrame.BackgroundTransparency = 0.2
 ProfileFrame.Parent = Sidebar
 addCorners(ProfileFrame, 8)
 addStroke(ProfileFrame, Color3.fromRGB(45, 32, 70), 1, 0.4)
+
 local AvatarImage = Instance.new("ImageLabel")
 AvatarImage.Size = UDim2.new(0, 32, 0, 32)
 AvatarImage.Position = UDim2.new(0, 8, 0.5, -16)
@@ -298,13 +264,15 @@ AvatarImage.BackgroundColor3 = Color3.fromRGB(26, 18, 40)
 AvatarImage.Image = "rbxasset://textures/ui/GuiImagePlaceholder.png"
 AvatarImage.Parent = ProfileFrame
 addCorners(AvatarImage, 16)
+
 task.spawn(function()
-pcall(function()
-local userId = LocalPlayer.UserId
-local content, isReady = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
-if isReady then AvatarImage.Image = content end
+    pcall(function()
+        local userId = LocalPlayer.UserId
+        local content, isReady = Players:GetUserThumbnailAsync(userId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size42x42)
+        if isReady then AvatarImage.Image = content end
+    end)
 end)
-end)
+
 local PlayerName = Instance.new("TextLabel")
 PlayerName.Size = UDim2.new(1, -50, 0, 15)
 PlayerName.Position = UDim2.new(0, 46, 0, 9)
@@ -740,7 +708,7 @@ local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
 table.insert(headPlayerConns, pAdded)
 else
 TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
-TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
+TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180) end)
 clearLegitHeadESP()
 end
 end)
