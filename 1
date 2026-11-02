@@ -149,7 +149,7 @@ EyeIcon.Text = "👁️"
 EyeIcon.TextColor3 = Theme.Primary
 EyeIcon.Font = Enum.Font.GothamBold
 EyeIcon.TextSize = 14
-EyeIcon.TextYAlignment = Enum.TextYAlignment.Center -- ПОЛНОСТЬЮ ИСПРАВЛЕНО НА ПРАВИЛЬНЫЙ ENUM
+EyeIcon.TextYAlignment = Enum.TextYAlignment.Center
 EyeIcon.Parent = InfoBarFrame
 table.insert(ThemeObjects.Accents, EyeIcon)
 
@@ -157,7 +157,7 @@ local StreamLabel = Instance.new("TextLabel")
 StreamLabel.Size = UDim2.new(1, -38, 1, 0)
 StreamLabel.Position = UDim2.new(0, 33, 0, 0)
 StreamLabel.BackgroundTransparency = 1
-StreamLabel.Text = "FPS: -- | MS: --"
+StreamLabel.Text = "FPS: -- | PING: --"
 StreamLabel.TextColor3 = Theme.TextMain
 StreamLabel.Font = Enum.Font.GothamBold
 StreamLabel.TextSize = 11
@@ -165,18 +165,30 @@ StreamLabel.TextXAlignment = Enum.TextXAlignment.Left
 StreamLabel.TextYAlignment = Enum.TextYAlignment.Center
 StreamLabel.Parent = InfoBarFrame
 
--- Мониторинг FPS/Ping для отдельной полоски
-local fpsCount = 0
-RunService.RenderStepped:Connect(function(dt)
-    fpsCount = math.round(1 / dt)
-end)
+-- ИСПРАВЛЕННЫЙ СТАБИЛЬНЫЙ ПОТОК ДЛЯ FPS И ПИНГА
+local lastUpdate = 0
+local frameCount = 0
+local currentFPS = 60
 
-task.spawn(function()
-    while task.wait(0.4) do
+RunService.Heartbeat:Connect(function(step)
+    frameCount = frameCount + 1
+    lastUpdate = lastUpdate + step
+    
+    if lastUpdate >= 0.5 then -- Обновляем значения дважды в секунду для стабильности
+        currentFPS = math.round(frameCount / lastUpdate)
+        frameCount = 0
+        lastUpdate = 0
+        
         if InfoBarFrame and InfoBarFrame.Parent then
-            local ping = math.round(Stats.Network.ServerToClientPing * 1000)
-            StreamLabel.Text = string.format("FPS: %d | %dms", fpsCount, ping)
-        else break end
+            -- Получаем точный пинг в миллисекундах
+            local rawPing = Stats.Network.ServerToClientPing
+            local currentPing = math.round(rawPing * 1000)
+            
+            -- Если игрок в симуляции Studio или сеть еще не ответила, ставим заглушку 0ms
+            if currentPing < 0 or currentPing > 5000 then currentPing = 0 end
+            
+            StreamLabel.Text = string.format("FPS: %d | %dms", currentFPS, currentPing)
+        end
     end
 end)
 
@@ -264,7 +276,7 @@ end)
 local Title = Instance.new("TextLabel")
 Title.Parent = LogoContainer
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 48, 0, 2) 
+Title.Position = UDim2.new(0, 48, 0, 2)
 Title.Size = UDim2.new(1, -48, 1, 0)
 Title.Text = "NYX HUB"
 Title.TextColor3 = Theme.TextMain
@@ -272,7 +284,6 @@ Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.TextYAlignment = Enum.TextYAlignment.Center
-
 -- ПРОФИЛЬ ИГРОКА СЛЕВА
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(1, -16, 0, 48)
@@ -390,7 +401,6 @@ isMenuOpen = true
 else
 if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
 lastSavedPos = MainFrame.Position
--- Схлопывание и перелет в координаты верхней центральной инфо-полоски
 local targetPos = InfoBarFrame.Position
 local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
 collapseTween:Play()
