@@ -133,7 +133,7 @@ LoadingScreen:Destroy()
 -- ==========================================
 local InfoBarFrame = Instance.new("Frame")
 InfoBarFrame.Name = "NYX_InfoBar"
-InfoBarFrame.Size = UDim2.new(0, 44, 0, 32) -- Сделал её маленькой под размер значка
+InfoBarFrame.Size = UDim2.new(0, 44, 0, 32) 
 InfoBarFrame.AnchorPoint = Vector2.new(0.5, 0)
 InfoBarFrame.Position = UDim2.new(0.5, 0, 0, 10) 
 InfoBarFrame.BackgroundColor3 = Theme.Background
@@ -142,7 +142,7 @@ addStroke(InfoBarFrame, Color3.fromRGB(55, 42, 80), 1.2)
 InfoBarFrame.Parent = ScreenGui
 
 local EyeIcon = Instance.new("TextLabel")
-EyeIcon.Size = UDim2.new(1, 0, 1, 0) -- Растянут на всю плашку ровно по центру
+EyeIcon.Size = UDim2.new(1, 0, 1, 0) 
 EyeIcon.Position = UDim2.new(0, 0, 0, 0)
 EyeIcon.BackgroundTransparency = 1
 EyeIcon.Text = "👁️"
@@ -708,7 +708,7 @@ local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
 table.insert(headPlayerConns, pAdded)
 else
 TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
-TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180) end)
+TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)})
 clearLegitHeadESP()
 end
 end)
