@@ -165,7 +165,7 @@ StreamLabel.TextXAlignment = Enum.TextXAlignment.Left
 StreamLabel.TextYAlignment = Enum.TextYAlignment.Center
 StreamLabel.Parent = InfoBarFrame
 
--- ИСПРАВЛЕННЫЙ СТАБИЛЬНЫЙ ПОТОК ДЛЯ FPS И ПИНГА
+-- Мониторинг FPS и Пинга
 local lastUpdate = 0
 local frameCount = 0
 local currentFPS = 60
@@ -174,19 +174,16 @@ RunService.Heartbeat:Connect(function(step)
     frameCount = frameCount + 1
     lastUpdate = lastUpdate + step
     
-    if lastUpdate >= 0.5 then -- Обновляем значения дважды в секунду для стабильности
+    if lastUpdate >= 0.5 then 
         currentFPS = math.round(frameCount / lastUpdate)
         frameCount = 0
         lastUpdate = 0
         
         if InfoBarFrame and InfoBarFrame.Parent then
-            -- Получаем точный пинг в миллисекундах
             local rawPing = Stats.Network.ServerToClientPing
             local currentPing = math.round(rawPing * 1000)
             
-            -- Если игрок в симуляции Studio или сеть еще не ответила, ставим заглушку 0ms
             if currentPing < 0 or currentPing > 5000 then currentPing = 0 end
-            
             StreamLabel.Text = string.format("FPS: %d | %dms", currentFPS, currentPing)
         end
     end
@@ -276,7 +273,7 @@ end)
 local Title = Instance.new("TextLabel")
 Title.Parent = LogoContainer
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 48, 0, 2)
+Title.Position = UDim2.new(0, 48, 0, 2) 
 Title.Size = UDim2.new(1, -48, 1, 0)
 Title.Text = "NYX HUB"
 Title.TextColor3 = Theme.TextMain
