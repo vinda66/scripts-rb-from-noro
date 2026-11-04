@@ -196,7 +196,7 @@ MainFrame.InputChanged:Connect(function(input)
     end
 end)
 
--- БОКОВАЯ ПАНЕЛЬ (Сайдбар)
+-- БОКОВАЯ ПАНЕЛЬ
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Parent = MainFrame
@@ -313,7 +313,6 @@ page.BackgroundTransparency = 1
 page.Visible = false
 page.ScrollBarThickness = 2
 page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
--- ИСПРАВЛЕНИЕ: Автоматический размер Canvas под количество элементов
 page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 page.CanvasSize = UDim2.new(0, 0, 0, 0)
 page.Parent = Container
@@ -353,7 +352,7 @@ if shared.nyxFovCircle then
 shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
 end
 end
--- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
+-- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ
 local isMenuOpen = true
 local isTweening = false
 local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0)
@@ -686,7 +685,7 @@ end
 end
 end
 end
-local isDropdownOpen = false
+isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
 isDropdownOpen = not isDropdownOpen
 local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
@@ -812,15 +811,13 @@ end
 end
 end
 end)
--- =========================================================
--- БЕЗОПАСНЫЙ СЕТЕВОЙ ХУК ТРАССЕРОВ (ТОЛЬКО МОИ ПУЛИ)
--- =========================================================
+-- СТАБИЛЬНЫЕ КАСТОРМНЫЕ ТРАССЕРЫ ДЛЯ МОИХ ПУЛЬ
 local bulletTracersToggle = false
-local networkHook = nil
+local weaponClickConn = nil
 local function drawMyOwnLaser(startPos, endPos)
 if not startPos or not endPos then return end
 local distance = (endPos - startPos).Magnitude
-if distance > 1500 or distance < 1 then return end
+if distance > 1000 or distance < 1 then return end
 local laserPart = Instance.new("Part")
 laserPart.Name = "NYX_MyLaser"
 laserPart.Anchored = true
@@ -836,34 +833,26 @@ Transparency = 1
 }):Play()
 game:GetService("Debris"):AddItem(laserPart, 0.35)
 end
--- Хукаем RemoteEvent эффектов, чтобы ловить точку выстрела
-local remotesFolder = game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 5)
-if remotesFolder then
-local effectEvent = remotesFolder:WaitForChild("Effect", 5)
-if effectEvent and effectEvent:IsA("RemoteEvent") then
-networkHook = effectEvent.OnClientEvent:Connect(function(...)
+-- Универсальная детекция выстрела через клик с активным оружием (100% стабильно)
+weaponClickConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
 if not bulletTracersToggle then return end
-local args = {...}
--- Проверяем структуру ивента игры: ищем Vector3 координаты начала и конца
-local originPos, hitPos
-for _, arg in ipairs(args) do
-if typeof(arg) == "Vector3" then
-if not originPos then originPos = arg else hitPos = arg break end
-elseif typeof(arg) == "table" and arg.origin then
-originPos = arg.origin
-hitPos = arg.hit or arg.finish or arg.stop
+if input.UserInputType == Enum.UserInputType.MouseButton1 then
+local char = LocalPlayer.Character
+if char and char:FindFirstChildOfClass("Tool") then
+local muzzle = char:FindFirstChild("Handle") or char:FindFirstChildWhichIsA("BasePart", true)
+if muzzle then
+task.wait(0.02) -- Микрозадержка для синхронизации направления
+local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {char}
+raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
+local hitPos = result and result.Position or (mouseRay.Origin + mouseRay.Direction * 600)
+task.spawn(drawMyOwnLaser, muzzle.Position, hitPos)
 end
-end
--- Фильтр: Проверяем, спавнится ли пуля у нашего персонажа
-if originPos and hitPos and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-local distFromMe = (originPos - LocalPlayer.Character.Head.Position).Magnitude
-if distFromMe < 12 then -- Пуля вылетела из нас (<3 метров)
-task.spawn(drawMyOwnLaser, originPos, hitPos)
 end
 end
 end)
-end
-end
 createHazeToggle("Bullet Tracers (Only Me)", Pages.Visuals, function(state)
 bulletTracersToggle = state
 end)
