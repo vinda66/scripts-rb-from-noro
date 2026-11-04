@@ -277,8 +277,7 @@ end)
 
 local PlayerName = Instance.new("TextLabel")
 PlayerName.Size = UDim2.new(1, -50, 0, 15)
-PlayerName.Position = UDim2.new(0, 46, 0, 9)
-PlayerName.BackgroundTransparency = 1
+PlayerName.Position = UDim2.new(0, 46, 0, 9)PlayerName.BackgroundTransparency = 1
 PlayerName.Text = LocalPlayer.DisplayName
 PlayerName.TextColor3 = Theme.TextMain
 PlayerName.Font = Enum.Font.GothamBold
@@ -286,6 +285,7 @@ PlayerName.TextSize = 11
 PlayerName.TextXAlignment = Enum.TextXAlignment.Left
 PlayerName.TextYAlignment = Enum.TextYAlignment.Center
 PlayerName.Parent = ProfileFrame
+
 local PlayerTag = Instance.new("TextLabel")
 PlayerTag.Size = UDim2.new(1, -50, 0, 12)
 PlayerTag.Position = UDim2.new(0, 46, 0, 24)
@@ -297,6 +297,7 @@ PlayerTag.TextSize = 9
 PlayerTag.TextXAlignment = Enum.TextXAlignment.Left
 PlayerTag.TextYAlignment = Enum.TextYAlignment.Center
 PlayerTag.Parent = ProfileFrame
+
 -- ГЛАВНЫЙ КОНТЕЙНЕР ДЛЯ ВКЛАДОК
 local Container = Instance.new("Frame")
 Container.Name = "Container"
@@ -304,6 +305,7 @@ Container.Parent = MainFrame
 Container.BackgroundTransparency = 1
 Container.Position = UDim2.new(0, 170, 0, 20)
 Container.Size = UDim2.new(1, -185, 1, -40)
+
 local Pages = {}
 local function createTabFrame(name)
 local page = Instance.new("ScrollingFrame")
@@ -313,20 +315,25 @@ page.BackgroundTransparency = 1
 page.Visible = false
 page.ScrollBarThickness = 2
 page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
+
 page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 page.CanvasSize = UDim2.new(0, 0, 0, 0)
 page.Parent = Container
+
 local layout = Instance.new("UIListLayout")
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Padding = UDim.new(0, 8)
 layout.Parent = page
+
 Pages[name] = page
 end
+
 createTabFrame("Combat")
 createTabFrame("Visuals")
 createTabFrame("World")
 createTabFrame("Settings")
--- СИСТЕМА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК
+
+-- СИСТЕМА П ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК
 _G.currentTab = "Combat"
 local function showTab(tabName)
 _G.currentTab = tabName
@@ -352,11 +359,13 @@ if shared.nyxFovCircle then
 shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
 end
 end
+
 -- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ
 local isMenuOpen = true
 local isTweening = false
 local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0)
 local normalSize = UDim2.new(0, 550, 0, 390)
+
 local function toggleMenuVisuals(open)
 if isTweening then return end
 isTweening = true
@@ -379,11 +388,13 @@ isMenuOpen = false
 end
 isTweening = false
 end
+
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
 toggleMenuVisuals(not isMenuOpen)
 end
 end)
+
 local tabCount = 0
 local function createTabButton(name, iconText)
 local btn = Instance.new("TextButton")
@@ -402,6 +413,7 @@ btn.TextYAlignment = Enum.TextYAlignment.Center
 addCorners(btn, 6)
 local bStroke = addStroke(btn, Theme.Primary, 1, 1)
 table.insert(ThemeObjects.Strokes, bStroke)
+
 btn.MouseEnter:Connect(function()
 if _G.currentTab ~= name then
 TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(50, 35, 80), TextColor3 = Color3.fromRGB(220, 210, 245)}):Play()
@@ -415,10 +427,12 @@ end)
 btn.MouseButton1Click:Connect(function() showTab(name) end)
 tabCount = tabCount + 1
 end
+
 createTabButton("Combat", "⚔")
 createTabButton("Visuals", "👁")
 createTabButton("World", "🌐")
 createTabButton("Settings", "⚙")
+
 -- СВИТЧИ (КОМПОНЕНТЫ)
 local function createHazeToggle(text, tabContainer, callback)
 local frame = Instance.new("Frame")
@@ -428,6 +442,7 @@ frame.BackgroundTransparency = 0.4
 frame.Parent = tabContainer
 addCorners(frame, 8)
 addStroke(frame, Theme.Stroke, 1, 0.4)
+
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, -60, 1, 0)
 label.Position = UDim2.new(0, 12, 0, 0)
@@ -439,6 +454,7 @@ label.TextSize = 13
 label.TextXAlignment = Enum.TextXAlignment.Left
 label.TextYAlignment = Enum.TextYAlignment.Center
 label.Parent = frame
+
 local toggleBg = Instance.new("TextButton")
 toggleBg.Size = UDim2.new(0, 40, 0, 22)
 toggleBg.Position = UDim2.new(1, -52, 0.5, -11)
@@ -447,12 +463,14 @@ toggleBg.Text = ""
 toggleBg.Parent = frame
 addCorners(toggleBg, 11)
 addStroke(toggleBg, Color3.fromRGB(55, 45, 75), 1)
+
 local ball = Instance.new("Frame")
 ball.Size = UDim2.new(0, 16, 0, 16)
 ball.Position = UDim2.new(0, 3, 0.5, -8)
 ball.BackgroundColor3 = Color3.fromRGB(150, 135, 175)
 ball.Parent = toggleBg
 addCorners(ball, 8)
+
 local state = false
 frame.MouseEnter:Connect(function()
 TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1, BackgroundColor3 = Color3.fromRGB(24, 18, 38)}):Play()
@@ -460,6 +478,7 @@ end)
 frame.MouseLeave:Connect(function()
 TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.4, BackgroundColor3 = Theme.Card}):Play()
 end)
+
 toggleBg.MouseButton1Click:Connect(function()
 state = not state
 if state then
@@ -477,6 +496,7 @@ callback(state)
 end)
 return frame
 end
+
 local function getEquippedItem(plr)
 if plr.Character then
 for _, obj in ipairs(plr.Character:GetChildren()) do
@@ -485,26 +505,31 @@ end
 end
 return "[Hands]"
 end
+
 -- ==========================================
 -- 👁️ В К Л А Д К А  « V I S U A L S »
 -- ==========================================
 local espToggle = false
 local espConnections = {}
+
 createHazeToggle("Player ESP", Pages.Visuals, function(state)
 espToggle = state
 if espToggle then
 local function createESP(plr)
 if plr == LocalPlayer then return end
+
 local function addHighlight(char)
 if not espToggle or not char then return end
 task.wait(0.2)
 if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
+
 local highlight = Instance.new("Highlight")
 highlight.Name = "ESPHighlight"
 highlight.FillColor = Theme.Primary
 highlight.FillTransparency = 0.6
 highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
 highlight.Parent = char
+
 local head = char:WaitForChild("Head", 5)
 if head then
 if head:FindFirstChild("ESPName") then head.ESPName:Destroy() end
@@ -514,6 +539,7 @@ billboard.AlwaysOnTop = true
 billboard.Size = UDim2.new(0, 200, 0, 60)
 billboard.StudsOffset = Vector3.new(0, 3, 0)
 billboard.Parent = head
+
 local nameLabel = Instance.new("TextLabel")
 nameLabel.Size = UDim2.new(1, 0, 0, 20)
 nameLabel.BackgroundTransparency = 1
@@ -522,6 +548,7 @@ nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
 nameLabel.TextSize = 12
 nameLabel.Font = Enum.Font.GothamBold
 nameLabel.Parent = billboard
+
 local invLabel = Instance.new("TextLabel")
 invLabel.Position = UDim2.new(0, 0, 0, 18)
 invLabel.Size = UDim2.new(1, 0, 0, 15)
@@ -531,6 +558,7 @@ invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
 invLabel.TextSize = 10
 invLabel.Font = Enum.Font.GothamSemibold
 invLabel.Parent = billboard
+
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
 if espToggle and char and char.Parent and head and head.Parent and billboard and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
@@ -811,48 +839,62 @@ end
 end
 end
 end)
--- СТАБИЛЬНЫЕ КАСТОРМНЫЕ ТРАССЕРЫ ДЛЯ МОИХ ПУЛЬ
+-- =========================================================
+-- 🔥 ПЛАВНО ТАЮЩИЕ СВЕТЯЩИЕСЯ НЕОНОВЫЕ ЛИНИИ (ONLY ME)
+-- =========================================================
 local bulletTracersToggle = false
-local weaponClickConn = nil
-local function drawMyOwnLaser(startPos, endPos)
+local networkHook = nil
+local function drawSmoothFadeLaser(startPos, endPos)
 if not startPos or not endPos then return end
 local distance = (endPos - startPos).Magnitude
-if distance > 1000 or distance < 1 then return end
+if distance > 1200 or distance < 1 then return end
 local laserPart = Instance.new("Part")
-laserPart.Name = "NYX_MyLaser"
+laserPart.Name = "NYX_SmoothLaser"
 laserPart.Anchored = true
 laserPart.CanCollide = false
-laserPart.Material = Enum.Material.Neon
-laserPart.Color = Theme.Primary
-laserPart.Size = Vector3.new(0.08, 0.08, distance)
+laserPart.CastShadow = false
+laserPart.Material = Enum.Material.Neon -- Яркий самосветящийся неон
+laserPart.Color = Theme.Primary         -- Синхронизация с цветом темы
+laserPart.Size = Vector3.new(0.14, 0.14, distance) -- Жирный стартовый размер
+laserPart.Transparency = 0              -- Начальная максимальная яркость
 laserPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
 laserPart.Parent = workspace
-TweenService:Create(laserPart, TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+-- ИСПРАВЛЕНИЕ: Одновременное сужение луча и вывод прозрачности в 1 (полное растворение)
+local fadeTween = TweenService:Create(laserPart, TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
 Size = Vector3.new(0, 0, distance),
 Transparency = 1
-}):Play()
-game:GetService("Debris"):AddItem(laserPart, 0.35)
+})
+fadeTween:Play()
+-- Чистим объект из оперативной памяти
+game:GetService("Debris"):AddItem(laserPart, 0.45)
 end
--- Универсальная детекция выстрела через клик с активным оружием (100% стабильно)
-weaponClickConn = UserInputService.InputBegan:Connect(function(input, gameProcessed)
+-- Сетевой перехват
+local remotesFolder = game:GetService("ReplicatedStorage"):WaitForChild("Remotes", 5)
+if remotesFolder then
+local effectEvent = remotesFolder:WaitForChild("Effect", 5)
+if effectEvent and effectEvent:IsA("RemoteEvent") then
+networkHook = effectEvent.OnClientEvent:Connect(function(...)
 if not bulletTracersToggle then return end
-if input.UserInputType == Enum.UserInputType.MouseButton1 then
-local char = LocalPlayer.Character
-if char and char:FindFirstChildOfClass("Tool") then
-local muzzle = char:FindFirstChild("Handle") or char:FindFirstChildWhichIsA("BasePart", true)
-if muzzle then
-task.wait(0.02) -- Микрозадержка для синхронизации направления
-local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = {char}
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
-local hitPos = result and result.Position or (mouseRay.Origin + mouseRay.Direction * 600)
-task.spawn(drawMyOwnLaser, muzzle.Position, hitPos)
+local args = {...}
+local originPos, hitPos
+for _, arg in ipairs(args) do
+if typeof(arg) == "Vector3" then
+if not originPos then originPos = arg else hitPos = arg break end
+elseif typeof(arg) == "table" and arg.origin then
+originPos = arg.origin
+hitPos = arg.hit or arg.finish or arg.stop
 end
+end
+-- Валидация выстрела локального игрока
+if originPos and hitPos and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+local distFromMe = (originPos - LocalPlayer.Character.Head.Position).Magnitude
+if distFromMe < 12 then
+task.spawn(drawSmoothFadeLaser, originPos, hitPos)
 end
 end
 end)
+end
+end
 createHazeToggle("Bullet Tracers (Only Me)", Pages.Visuals, function(state)
 bulletTracersToggle = state
 end)
