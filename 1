@@ -40,6 +40,8 @@ local function updateMenuTheme(newAccentColor)
                 obj.BackgroundColor3 = newAccentColor
             elseif obj:IsA("TextLabel") or obj:IsA("TextButton") then
                 obj.TextColor3 = newAccentColor
+            elseif obj:IsA("ImageLabel") then
+                obj.ImageColor3 = newAccentColor
             end
         end
     end
@@ -129,7 +131,7 @@ fadeTween.Completed:Wait()
 LoadingScreen:Destroy()
 
 -- ==========================================
--- 👁️ КОМПАКТНАЯ ПОЛОСКА СО ЗНАЧКОМ (ВВЕРХУ ПО ЦЕНТРУ)
+-- 👁️ КОМПАКТНАЯ ПОЛОСКА СО ЗНАЧКОМ
 -- ==========================================
 local InfoBarFrame = Instance.new("Frame")
 InfoBarFrame.Name = "NYX_InfoBar"
@@ -194,7 +196,7 @@ MainFrame.InputChanged:Connect(function(input)
     end
 end)
 
--- БОКОВАЯ ПАНЕЛЬ (Сайдбар)
+-- БОКОВАЯ ПАНЕЛЬ
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Parent = MainFrame
@@ -311,6 +313,8 @@ page.BackgroundTransparency = 1
 page.Visible = false
 page.ScrollBarThickness = 2
 page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
+-- ИСПРАВЛЕНИЕ: Автоматический размер Canvas под количество элементов
+page.AutomaticCanvasSize = Enum.AutomaticSize.Y
 page.CanvasSize = UDim2.new(0, 0, 0, 0)
 page.Parent = Container
 local layout = Instance.new("UIListLayout")
@@ -349,7 +353,7 @@ if shared.nyxFovCircle then
 shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
 end
 end
--- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
+-- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ
 local isMenuOpen = true
 local isTweening = false
 local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0)
@@ -416,7 +420,7 @@ createTabButton("Combat", "⚔")
 createTabButton("Visuals", "👁")
 createTabButton("World", "🌐")
 createTabButton("Settings", "⚙")
--- СВИТЧИ
+-- СВИТЧИ (КОМПОНЕНТЫ)
 local function createHazeToggle(text, tabContainer, callback)
 local frame = Instance.new("Frame")
 frame.Size = UDim2.new(1, -4, 0, 44)
@@ -483,7 +487,7 @@ end
 return "[Hands]"
 end
 -- ==========================================
--- В К Л А Д К А  « V I S U A L S »
+-- 👁️ В К Л А Д К А  « V I S U A L S »
 -- ==========================================
 local espToggle = false
 local espConnections = {}
@@ -491,10 +495,10 @@ createHazeToggle("Player ESP", Pages.Visuals, function(state)
 espToggle = state
 if espToggle then
 local function createESP(plr)
-if plr == game.Players.LocalPlayer then return end
+if plr == LocalPlayer then return end
 local function addHighlight(char)
-if not espToggle then return end
-task.wait(0.1)
+if not espToggle or not char then return end
+task.wait(0.2) -- Задержка для прогрузки рендера персонажа
 if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
 local highlight = Instance.new("Highlight")
 highlight.Name = "ESPHighlight"
@@ -518,7 +522,6 @@ nameLabel.Text = plr.Name .. " [0m]"
 nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
 nameLabel.TextSize = 12
 nameLabel.Font = Enum.Font.GothamBold
-nameLabel.TextYAlignment = Enum.TextYAlignment.Center
 nameLabel.Parent = billboard
 local invLabel = Instance.new("TextLabel")
 invLabel.Position = UDim2.new(0, 0, 0, 18)
@@ -528,11 +531,11 @@ invLabel.Text = getEquippedItem(plr)
 invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
 invLabel.TextSize = 10
 invLabel.Font = Enum.Font.GothamSemibold
-invLabel.TextYAlignment = Enum.TextYAlignment.Center
 invLabel.Parent = billboard
+-- ИСПРАВЛЕНИЕ: Предотвращение утечки памяти с помощью валидации char
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
-if espToggle and char and char.Parent and head and billboard and nameLabel and invLabel and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+if espToggle and char and char.Parent and head and head.Parent and billboard and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
 local distanceEnd = (head.Position - LocalPlayer.Character.Head.Position).Magnitude
 local distanceMeters = math.round(distanceEnd / 3.5)
 nameLabel.Text = plr.Name .. " [" .. tostring(distanceMeters) .. "m]"
@@ -548,13 +551,14 @@ if plr.Character then addHighlight(plr.Character) end
 local cConn = plr.CharacterAdded:Connect(addHighlight)
 table.insert(espConnections, cConn)
 end
-for _, p in ipairs(game.Players:GetPlayers()) do createESP(p) end
-local pAdded = game.Players.PlayerAdded:Connect(createESP)
+for _, p in ipairs(Players:GetPlayers()) do createESP(p) end
+local pAdded = Players.PlayerAdded:Connect(createESP)
 table.insert(espConnections, pAdded)
 else
+-- Очистка всех соединений и объектов
 for _, conn in ipairs(espConnections) do if conn then conn:Disconnect() end end
 espConnections = {}
-for _, plr in ipairs(game.Players:GetPlayers()) do
+for _, plr in ipairs(Players:GetPlayers()) do
 if plr.Character then
 if plr.Character:FindFirstChild("ESPHighlight") then plr.Character.ESPHighlight:Destroy() end
 local head = plr.Character:FindFirstChild("Head")
@@ -563,6 +567,7 @@ end
 end
 end
 end)
+-- Legit Head ESP
 local legitHeadToggle = false
 _G.showThroughWalls = false
 local headPlayerConns = {}
@@ -587,7 +592,6 @@ MainLabel.TextColor3 = Theme.TextMain
 MainLabel.Font = Enum.Font.GothamSemibold
 MainLabel.TextSize = 13
 MainLabel.TextXAlignment = Enum.TextXAlignment.Left
-MainLabel.TextYAlignment = Enum.TextYAlignment.Center
 MainLabel.Parent = MainToggleFrame
 local ArrowBtn = Instance.new("TextButton")
 ArrowBtn.Size = UDim2.new(0, 24, 0, 24)
@@ -625,7 +629,6 @@ SubLabel.TextColor3 = Theme.TextSub
 SubLabel.Font = Enum.Font.GothamSemibold
 SubLabel.TextSize = 12
 SubLabel.TextXAlignment = Enum.TextXAlignment.Left
-SubLabel.TextYAlignment = Enum.TextYAlignment.Center
 SubLabel.Parent = SubToggleFrame
 local SubToggleBg = Instance.new("TextButton")
 SubToggleBg.Size = UDim2.new(0, 34, 0, 16)
@@ -641,9 +644,9 @@ SubBall.BackgroundColor3 = Color3.fromRGB(140, 130, 155)
 SubBall.Parent = SubToggleBg
 addCorners(SubBall, 5)
 local function createLegitHeadESP(plr)
-if plr == game.Players.LocalPlayer then return end
+if plr == LocalPlayer then return end
 local function addHeadHighlight(char)
-if not legitHeadToggle then return end
+if not legitHeadToggle or not char then return end
 local head = char:WaitForChild("Head", 5)
 if head then
 if head:FindFirstChild("LegitHeadGlow") then head.LegitHeadGlow:Destroy() end
@@ -663,7 +666,7 @@ local conn = plr.CharacterAdded:Connect(addHeadHighlight)
 table.insert(headPlayerConns, conn)
 end
 local function updateAllHeads()
-for _, plr in ipairs(game.Players:GetPlayers()) do
+for _, plr in ipairs(Players:GetPlayers()) do
 if plr ~= LocalPlayer and plr.Character then
 local head = plr.Character:FindFirstChild("Head")
 if head and head:FindFirstChild("LegitHeadGlow") then
@@ -675,7 +678,7 @@ end
 local function clearLegitHeadESP()
 for _, conn in ipairs(headPlayerConns) do if conn then conn:Disconnect() end end
 headPlayerConns = {}
-for _, plr in ipairs(game.Players:GetPlayers()) do
+for _, plr in ipairs(Players:GetPlayers()) do
 if plr.Character then
 local head = plr.Character:FindFirstChild("Head")
 if head then
@@ -685,9 +688,8 @@ end
 end
 end
 end
-isDropdownOpen = false
+local isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
-if isTweening then return end
 isDropdownOpen = not isDropdownOpen
 local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 if isDropdownOpen then
@@ -703,12 +705,12 @@ legitHeadToggle = not legitHeadToggle
 if legitHeadToggle then
 TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
 TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-for _, plr in ipairs(game.Players:GetPlayers()) do createLegitHeadESP(plr) end
-local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
+for _, plr in ipairs(Players:GetPlayers()) do createLegitHeadESP(plr) end
+local pAdded = Players.PlayerAdded:Connect(createLegitHeadESP)
 table.insert(headPlayerConns, pAdded)
 else
 TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
-TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)})
+TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
 clearLegitHeadESP()
 end
 end)
@@ -723,15 +725,15 @@ TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5
 end
 updateAllHeads()
 end)
+-- SupplyCrate Wallhack
 local lootEspToggle = false
 local lootConnections = {}
 createHazeToggle("SupplyCrate Wallhack", Pages.Visuals, function(state)
 lootEspToggle = state
 if lootEspToggle then
 local function applyCrateESP(obj)
-if not lootEspToggle then return end
-if obj.Name ~= "SupplyCrate" then return end
-if not obj:FindFirstChild("LootHighlight") then
+if not lootEspToggle or not obj then return end
+if obj.Name == "SupplyCrate" and not obj:FindFirstChild("LootHighlight") then
 local highlight = Instance.new("Highlight")
 highlight.Name = "LootHighlight"
 highlight.FillColor = Theme.Primary
@@ -754,15 +756,16 @@ end
 end
 end
 end)
+-- Look Tracers
 local tracersToggle = false
 local tracerObjects = {}
 createHazeToggle("Look Tracers", Pages.Visuals, function(state)
 tracersToggle = state
 if tracersToggle then
 local function createLookTracer(plr)
-if plr == game.Players.LocalPlayer then return end
+if plr == LocalPlayer then return end
 local function addTracer(char)
-if not tracersToggle then return end
+if not tracersToggle or not char then return end
 local head = char:WaitForChild("Head", 5)
 if head then
 local attachmentStart = Instance.new("Attachment")
@@ -783,8 +786,8 @@ beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd
 beam.Parent = head
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
-if char and char.Parent and head and endPart and beam then
-endPart.Position = head.Position + (head.CFrame.LookVector * 525)
+if tracersToggle and char and char.Parent and head and head.Parent and endPart and beam then
+endPart.Position = head.Position + (head.CFrame.LookVector * 125) -- Оптимальная длина луча
 else
 if updateConn then updateConn:Disconnect() end
 end
@@ -793,19 +796,25 @@ table.insert(tracerObjects, updateConn)
 end
 end
 if plr.Character then addTracer(plr.Character) end
-plr.CharacterAdded:Connect(addTracer)
+local tcConn = plr.CharacterAdded:Connect(addTracer)
+table.insert(tracerObjects, tcConn)
 end
-for _, p in ipairs(game.Players:GetPlayers()) do createLookTracer(p) end
+for _, p in ipairs(Players:GetPlayers()) do createLookTracer(p) end
+local ptAdded = Players.PlayerAdded:Connect(createLookTracer)
+table.insert(tracerObjects, ptAdded)
 else
 for _, conn in ipairs(tracerObjects) do if conn then conn:Disconnect() end end
 tracerObjects = {}
-for _, plr in ipairs(game.Players:GetPlayers()) do
-if plr.Character and plr.Character:FindFirstChild("TracerEndPart") then
-plr.Character.TracerEndPart:Destroy()
+for _, plr in ipairs(Players:GetPlayers()) do
+if plr.Character then
+if plr.Character:FindFirstChild("TracerEndPart") then plr.Character.TracerEndPart:Destroy() end
+local head = plr.Character:FindFirstChild("Head")
+if head and head:FindFirstChild("Beam") then head.Beam:Destroy() end
 end
 end
 end
 end)
+-- Bullet Tracers
 local bulletTracersToggle = false
 local lastActiveWeapon = nil
 local weaponConnection = nil
@@ -824,9 +833,7 @@ TweenService:Create(laserPart, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.Ea
 Size = Vector3.new(0, 0, distance),
 Transparency = 1
 }):Play()
-pcall(function()
 game:GetService("Debris"):AddItem(laserPart, 0.4)
-end)
 end
 local function trackWeaponFire()
 if weaponConnection then weaponConnection:Disconnect() end
@@ -850,7 +857,9 @@ createHazeToggle("Bullet Tracers (Theme Accent)", Pages.Visuals, function(state)
 bulletTracersToggle = state
 if bulletTracersToggle then
 trackWeaponFire()
-RunService.RenderStepped:Connect(function()
+local weaponLoopConn
+weaponLoopConn = RunService.RenderStepped:Connect(function()
+if not bulletTracersToggle then weaponLoopConn:Disconnect() return end
 local char = LocalPlayer.Character
 if char then
 local currentTool = char:FindFirstChildOfClass("Tool")
@@ -864,6 +873,7 @@ elseif weaponConnection then
 weaponConnection:Disconnect()
 end
 end)
+-- FullBright
 local fullBrightToggle = false
 local oldAmbient, oldColorShift, oldOutdoorAmbient
 createHazeToggle("FullBright (No Darkness)", Pages.Visuals, function(state)
@@ -887,7 +897,7 @@ end
 end
 end)
 -- ==========================================
--- В К Л А Д К А  « C O M B A T »
+-- ⚔️ В К Л А Д К А  « C O M B A T »
 -- ==========================================
 _G.aimbotToggle = false
 createHazeToggle("Aimbot Master", Pages.Combat, function(state)
@@ -901,7 +911,6 @@ SliderLabel.Font = Enum.Font.GothamSemibold
 SliderLabel.TextColor3 = Theme.TextSub
 SliderLabel.TextSize = 12
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-SliderLabel.TextYAlignment = Enum.TextYAlignment.Center
 local SliderFrame = Instance.new("Frame")
 SliderFrame.Parent = Pages.Combat
 SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
@@ -944,6 +953,7 @@ fovCircle.Radius = fovRadius
 SliderLabel.Text = "FOV Limit: " .. fovRadius
 end
 end)
+-- TriggerBot
 local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
@@ -961,16 +971,15 @@ if result and result.Instance and result.Instance.Parent then
 local model = result.Instance.Parent
 local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
 if humanoid and humanoid.Health > 0 then
-local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
+local targetPlayer = Players:GetPlayerFromCharacter(humanoid.Parent)
 if targetPlayer and targetPlayer ~= LocalPlayer then
-if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
-return
-end
+if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then return end
 pcall(function() tool:Activate() end)
 end
 end
 end
 end)
+-- Aimbot Core
 local Smoothness = 0.25
 local function isVisible(targetPart)
 local character = LocalPlayer.Character
@@ -988,7 +997,7 @@ local closestPlayer = nil
 local shortestDistance = math.huge
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return nil end
-for _, player in ipairs(game.Players:GetPlayers()) do
+for _, player in ipairs(Players:GetPlayers()) do
 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
 local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
 if onScreen then
@@ -1028,7 +1037,6 @@ SettingsLabel.TextColor3 = Theme.TextMain
 SettingsLabel.Font = Enum.Font.GothamBold
 SettingsLabel.TextSize = 14
 SettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
-SettingsLabel.TextYAlignment = Enum.TextYAlignment.Center
 SettingsLabel.Parent = Pages.Settings
 local ColorsContainer = Instance.new("Frame")
 ColorsContainer.Size = UDim2.new(1, -4, 0, 70)
