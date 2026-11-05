@@ -904,7 +904,7 @@ SliderLabel.Text = "FOV Limit: " .. fovRadius
 end
 end)
 -- ГЛОБАЛЬНАЯ НАСТРОЙКА ЧАСТИ ТЕЛА ДЛЯ ЗАХВАТАЦЕЛИ
-_G.aimbotTargetPart = "Head" -- По умолчанию целимся в голову
+_G.aimbotTargetPart = "Head"
 -- СОЗДАНИЕ ВЫПАДАЮЩЕГО СПИСКА (DROPDOWN) ДЛЯ ВЫБОРА ХИТБОКСА
 local TargetDropdownContainer = Instance.new("Frame")
 TargetDropdownContainer.Size = UDim2.new(1, -20, 0, 40)
@@ -980,7 +980,6 @@ _G.aimbotTargetPart = "Head"
 DropLabel.Text = "Target Part: Head"
 HeadOptionBtn.TextColor3 = Color3.fromRGB(200, 185, 230)
 TorsoOptionBtn.TextColor3 = Theme.TextSub
--- Автоматическое закрытие дропдауна
 isTargetDropOpen = false
 local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 TweenService:Create(TargetDropdownContainer, tInfo, {Size = UDim2.new(1, -20, 0, 40)}):Play()
@@ -991,7 +990,6 @@ _G.aimbotTargetPart = "HumanoidRootPart"
 DropLabel.Text = "Target Part: Body"
 TorsoOptionBtn.TextColor3 = Color3.fromRGB(200, 185, 230)
 HeadOptionBtn.TextColor3 = Theme.TextSub
--- Автоматическое закрытие дропдауна
 isTargetDropOpen = false
 local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 TweenService:Create(TargetDropdownContainer, tInfo, {Size = UDim2.new(1, -20, 0, 40)}):Play()
@@ -1001,17 +999,16 @@ local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
--- УМНЫЙ СБОР НАЗНАЧЕННЫХ ЧАСТЕЙ ТЕЛА ("Head" или "HumanoidRootPart") В WORKSPACE
+-- ГЛУБОКИЙ СБОР НАЗНАЧЕННЫХ ЧАСТЕЙ ТЕЛА С ИСПРАВЛЕННЫМ СИНТАКСИСОМ child ~= myChar
 local function getClosestTargetInFOV()
 local closestPart = nil
 local shortestDistance = math.huge
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 local myChar = LocalPlayer.Character
 for _, child in ipairs(workspace:GetChildren()) do
-if child:IsA("Model") and child child ~= myChar then
+if child:IsA("Model") and child ~= myChar then
 local targetPart = child:FindFirstChild(_G.aimbotTargetPart)
 if targetPart and targetPart:IsA("BasePart") then
--- TeamCheck
 local targetPlayer = Players:GetPlayerFromCharacter(child) or Players:FindFirstChild(child.Name)
 if targetPlayer and LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
 continue
@@ -1042,10 +1039,9 @@ local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, ray
 if result and result.Instance then
 local hitInstance = result.Instance
 local hitModel = hitInstance.Parent
-if hitModel:IsA("Model") and hitModel ~= LocalPlayer.Character then
+if hitModel and hitModel:IsA("Model") and hitModel ~= LocalPlayer.Character then
 local desiredPart = hitModel:FindFirstChild(_G.aimbotTargetPart)
 if desiredPart and (hitInstance == desiredPart or hitInstance:IsDescendantOf(hitModel)) then
--- TeamCheck
 local targetPlayer = Players:GetPlayerFromCharacter(hitModel)
 if targetPlayer and LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
 return
