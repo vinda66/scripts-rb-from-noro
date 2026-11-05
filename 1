@@ -352,6 +352,7 @@ if bStroke then bStroke.Transparency = 1 end
 end
 end
 end
+-- УДАЛЕНА принудительная перезапись fovCircle.Visible отсюда!
 end
 -- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
 local isMenuOpen = true
@@ -991,7 +992,6 @@ local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
--- ГЛУБОКИЙ СБОР НАЗНАЧЕННЫХ ЧАСТЕЙ ТЕЛА С ИСПРАВЛЕННЫМ СИНТАКСИСОМ child ~= myChar
 local function getClosestTargetInFOV()
 local closestPart = nil
 local shortestDistance = math.huge
@@ -1023,7 +1023,6 @@ RunService.RenderStepped:Connect(function()
 if not triggerBotToggle or not LocalPlayer.Character then return end
 local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
 if not tool then return end
--- Создаем луч строго по центру экрана камеры
 local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
 local raycastParams = RaycastParams.new()
 raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
@@ -1034,7 +1033,6 @@ local hitObj = result.Instance
 local hitModel = hitObj:FindFirstAncestorOfClass("Model")
 if hitModel and hitModel ~= LocalPlayer.Character and hitModel.Parent == workspace then
 local desiredPart = hitModel:FindFirstChild(_G.aimbotTargetPart)
--- Проверяем: попал ли луч прямо в выбранную часть тела или в любой хитбокс этой модели
 if desiredPart and (hitObj == desiredPart or hitObj:IsDescendantOf(hitModel)) then
 local targetPlayer = Players:GetPlayerFromCharacter(hitModel) or Players:FindFirstChild(hitModel.Name)
 if targetPlayer and LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
@@ -1045,12 +1043,12 @@ end
 end
 end
 end)
--- ЦИКЛ АИМБОТА И ФОВ КРУГА (ИСПРАВЛЕНО ИСЧЕЗНОВЕНИЕ)
+-- ЦИКЛ АИМБОТА И ФОВ КРУГА (ПОЛНОСТЬЮ ИСПРАВЛЕНЫ ВСЕ СВЯЗИ)
 local Smoothness = 0.25
 RunService.RenderStepped:Connect(function()
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 fovCircle.Position = screenCenter
--- Исправлено: Круг FOV теперь зависит ТОЛЬКО от включенного аимбота, а не от видимости меню
+-- ИСПРАВЛЕНО: Теперь на круг FOV больше ничего не влияет, кроме тумблера аимбота
 fovCircle.Visible = _G.aimbotToggle
 if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
 local targetPart = getClosestTargetInFOV()
