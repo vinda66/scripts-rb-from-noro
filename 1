@@ -352,7 +352,6 @@ if bStroke then bStroke.Transparency = 1 end
 end
 end
 end
--- УДАЛЕНА принудительная перезапись fovCircle.Visible отсюда!
 end
 -- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
 local isMenuOpen = true
@@ -992,6 +991,7 @@ local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
+-- УМНЫЙ СБОР ВСЕХ ДЕТАЛЕЙ "Head" ИЛИ "HumanoidRootPart" В WORKSPACE
 local function getClosestTargetInFOV()
 local closestPart = nil
 local shortestDistance = math.huge
@@ -1018,6 +1018,20 @@ end
 end
 return closestPart
 end
+-- КЛИК ДЛЯ ТРИГГЕРБОТА ЧЕРЕЗ КЛИК МЫШКИ (ЭМУЛЯЦИЯ)
+local function clickMouse()
+if mouse1click then
+mouse1click()
+elseif LeftClick then
+LeftClick()
+else
+-- Запасной вариант через VirtualInputManager, если инжектор слабый
+local vim = game:GetService("VirtualInputManager")
+vim:SendMouseButtonEvent(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0, true, game, 0)
+task.wait(0.01)
+vim:SendMouseButtonEvent(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0, false, game, 0)
+end
+end
 -- НАДЕЖНЫЙ СВЕРХЧУВСТВИТЕЛЬНЫЙ ТРИГГЕРБОТ
 RunService.RenderStepped:Connect(function()
 if not triggerBotToggle or not LocalPlayer.Character then return end
@@ -1038,23 +1052,33 @@ local targetPlayer = Players:GetPlayerFromCharacter(hitModel) or Players:FindFir
 if targetPlayer and LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
 return
 end
-pcall(function() tool:Activate() end)
+pcall(clickMouse) -- Вызываем эмулированный клик
 end
 end
 end
 end)
--- ЦИКЛ АИМБОТА И ФОВ КРУГА (ПОЛНОСТЬЮ ИСПРАВЛЕНЫ ВСЕ СВЯЗИ)
-local Smoothness = 0.25
+-- НЕУЯЗВИМЫЙ ЦИКЛ АИМБОТА ЧЕРЕЗ СИСТЕМУ СКАНИРОВАНИЯ ЭКРАНА (MOUSE AIMBOT)
+local Smoothness = 4 -- Скорость доводки мыши (чем меньше число, тем плавнее наводка)
 RunService.RenderStepped:Connect(function()
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 fovCircle.Position = screenCenter
--- ИСПРАВЛЕНО: Теперь на круг FOV больше ничего не влияет, кроме тумблера аимбота
 fovCircle.Visible = _G.aimbotToggle
 if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
 local targetPart = getClosestTargetInFOV()
 if targetPart then
-local targetCFrame = CFrame.new(Camera.CFrame.Position, targetPart.Position)
-Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
+local pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+if onScreen then
+-- Вычисляем смещение цели относительно центра экрана
+local mouseLocation = UserInputService:GetMouseLocation()
+local deltaX = (pos.X - mouseLocation.X) / Smoothness
+local deltaY = (pos.Y - mouseLocation.Y) / Smoothness
+-- Эмулируем аппаратное движение мыши (обходит блокировки CFrame)
+if mousemoverel then
+mousemoverel(deltaX, deltaY)
+elseif input and input.move_mouse then
+input.move_mouse(deltaX, deltaY)
+end
+end
 end
 end
 end)
