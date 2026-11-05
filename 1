@@ -785,7 +785,7 @@ beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd
 beam.Parent = head
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
-if char and char.Parent and head and endPart and beam then
+if char and char.Parent battling and head and endPart and beam then
 endPart.Position = head.Position + (head.CFrame.LookVector * 525)
 else
 if updateConn then updateConn:Disconnect() end
@@ -991,7 +991,7 @@ local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
--- УМНЫЙ СБОР ВСЕХ ДЕТАЛЕЙ "Head" ИЛИ "HumanoidRootPart" В WORKSPACE
+-- СБОР БЛИЖАЙШЕЙ ЧАСТИ ТЕЛА С ЭКРАНА
 local function getClosestTargetInFOV()
 local closestPart = nil
 local shortestDistance = math.huge
@@ -1018,69 +1018,26 @@ end
 end
 return closestPart
 end
--- КЛИК ДЛЯ ТРИГГЕРБОТА ЧЕРЕЗ КЛИК МЫШКИ (ЭМУЛЯЦИЯ)
-local function clickMouse()
-if mouse1click then
-mouse1click()
-elseif LeftClick then
-LeftClick()
-else
--- Запасной вариант через VirtualInputManager, если инжектор слабый
-local vim = game:GetService("VirtualInputManager")
-vim:SendMouseButtonEvent(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0, true, game, 0)
-task.wait(0.01)
-vim:SendMouseButtonEvent(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0, false, game, 0)
-end
-end
--- НАДЕЖНЫЙ СВЕРХЧУВСТВИТЕЛЬНЫЙ ТРИГГЕРБОТ
-RunService.RenderStepped:Connect(function()
-if not triggerBotToggle or not LocalPlayer.Character then return end
-local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-if not tool then return end
-local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
-local raycastParams = RaycastParams.new()
-raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
-if result and result.Instance then
-local hitObj = result.Instance
-local hitModel = hitObj:FindFirstAncestorOfClass("Model")
-if hitModel and hitModel ~= LocalPlayer.Character and hitModel.Parent == workspace then
-local desiredPart = hitModel:FindFirstChild(_G.aimbotTargetPart)
-if desiredPart and (hitObj == desiredPart or hitObj:IsDescendantOf(hitModel)) then
-local targetPlayer = Players:GetPlayerFromCharacter(hitModel) or Players:FindFirstChild(hitModel.Name)
-if targetPlayer and LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
-return
-end
-pcall(clickMouse) -- Вызываем эмулированный клик
+-- СВЕРХНАДЁЖНЫЙ ХУК МЕТАМЕТОДА ДЛЯ ОБХОДА ИГРОВОЙ БЛОКИРОВКИ КАМЕРЫ
+local hook
+hook = hookmetamethod(game, "__index", function(self, key)
+-- Если игра или скрипт оружия опрашивает положение Камеры или направление Луча...
+if _G.aimbotToggle and (UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or triggerBotToggle) then
+if self == Camera and (key == "CFrame" or key == "CoordinateFrame") then
+local targetPart = getClosestTargetInFOV()
+if targetPart then
+-- Возвращаем игре модифицированный вектор направления прямо на голову/тело врага
+return CFrame.lookAt(Camera.CFrame.Position, targetPart.Position)
 end
 end
 end
+return hook(self, key)
 end)
--- НЕУЯЗВИМЫЙ ЦИКЛ АИМБОТА ЧЕРЕЗ СИСТЕМУ СКАНИРОВАНИЯ ЭКРАНА (MOUSE AIMBOT)
-local Smoothness = 4 -- Скорость доводки мыши (чем меньше число, тем плавнее наводка)
+-- Обновление круга FOV на каждом кадре
 RunService.RenderStepped:Connect(function()
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 fovCircle.Position = screenCenter
 fovCircle.Visible = _G.aimbotToggle
-if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-local targetPart = getClosestTargetInFOV()
-if targetPart then
-local pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-if onScreen then
--- Вычисляем смещение цели относительно центра экрана
-local mouseLocation = UserInputService:GetMouseLocation()
-local deltaX = (pos.X - mouseLocation.X) / Smoothness
-local deltaY = (pos.Y - mouseLocation.Y) / Smoothness
--- Эмулируем аппаратное движение мыши (обходит блокировки CFrame)
-if mousemoverel then
-mousemoverel(deltaX, deltaY)
-elseif input and input.move_mouse then
-input.move_mouse(deltaX, deltaY)
-end
-end
-end
-end
 end)
 -- ==========================================
 -- ⚙️ В К Л А Д К А  « S E T T I N G S »
