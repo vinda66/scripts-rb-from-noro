@@ -6,6 +6,10 @@ if shared.nyxFovCircle then
     shared.nyxFovCircle:Remove() 
     shared.nyxFovCircle = nil 
 end
+if shared.nyxFullBright then
+    game:GetService("RunService"):UnbindFromRenderStep("FullBrightLoop")
+    shared.nyxFullBright = nil
+end
 
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
@@ -40,8 +44,6 @@ local function updateMenuTheme(newAccentColor)
                 obj.BackgroundColor3 = newAccentColor
             elseif obj:IsA("TextLabel") or obj:IsA("TextButton") then
                 obj.TextColor3 = newAccentColor
-            elseif obj:IsA("ImageLabel") then
-                obj.ImageColor3 = newAccentColor
             end
         end
     end
@@ -196,7 +198,7 @@ MainFrame.InputChanged:Connect(function(input)
     end
 end)
 
--- БОКОВАЯ ПАНЕЛЬ
+-- БОКОВАЯ ПАНЕЛЬ (Сайдбар)
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Parent = MainFrame
@@ -286,7 +288,6 @@ PlayerName.TextSize = 11
 PlayerName.TextXAlignment = Enum.TextXAlignment.Left
 PlayerName.TextYAlignment = Enum.TextYAlignment.Center
 PlayerName.Parent = ProfileFrame
-
 local PlayerTag = Instance.new("TextLabel")
 PlayerTag.Size = UDim2.new(1, -50, 0, 12)
 PlayerTag.Position = UDim2.new(0, 46, 0, 24)
@@ -298,7 +299,6 @@ PlayerTag.TextSize = 9
 PlayerTag.TextXAlignment = Enum.TextXAlignment.Left
 PlayerTag.TextYAlignment = Enum.TextYAlignment.Center
 PlayerTag.Parent = ProfileFrame
-
 -- ГЛАВНЫЙ КОНТЕЙНЕР ДЛЯ ВКЛАДОК
 local Container = Instance.new("Frame")
 Container.Name = "Container"
@@ -306,299 +306,273 @@ Container.Parent = MainFrame
 Container.BackgroundTransparency = 1
 Container.Position = UDim2.new(0, 170, 0, 20)
 Container.Size = UDim2.new(1, -185, 1, -40)
-
 local Pages = {}
 local function createTabFrame(name)
-    local page = Instance.new("ScrollingFrame")
-    page.Name = name .. "Page"
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.Visible = false
-    page.ScrollBarThickness = 2
-    page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
-
-    page.AutomaticCanvasSize = Enum.AutomaticSize.Y
-    page.CanvasSize = UDim2.new(0, 0, 0, 0)
-    page.Parent = Container
-
-    local layout = Instance.new("UIListLayout")
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 8)
-    layout.Parent = page
-
-    Pages[name] = page
+local page = Instance.new("ScrollingFrame")
+page.Name = name .. "Page"
+page.Size = UDim2.new(1, 0, 1, 0)
+page.BackgroundTransparency = 1
+page.Visible = false
+page.ScrollBarThickness = 2
+page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
+page.CanvasSize = UDim2.new(0, 0, 0, 0)
+page.Parent = Container
+local layout = Instance.new("UIListLayout")
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 8)
+layout.Parent = page
+layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
+end)
+Pages[name] = page
 end
-
 createTabFrame("Combat")
 createTabFrame("Visuals")
 createTabFrame("World")
 createTabFrame("Settings")
-
 -- СИСТЕМА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК
 _G.currentTab = "Combat"
 local function showTab(tabName)
-    _G.currentTab = tabName
-    for name, page in pairs(Pages) do
-        page.Visible = (name == tabName)
-    end
-    for _, btn in ipairs(Sidebar:GetChildren()) do
-        if btn:IsA("TextButton") then
-            if btn.Name == tabName .. "TabBtn" then
-                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 25, 55), BackgroundTransparency = 0}):Play()
-                btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-                local bStroke = btn:FindFirstChildOfClass("UIStroke")
-                if bStroke then bStroke.Transparency = 0.3 end
-            else
-                TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,0,0), BackgroundTransparency = 1}):Play()
-                btn.TextColor3 = Theme.TextSub
-                local bStroke = btn:FindFirstChildOfClass("UIStroke")
-                if bStroke then bStroke.Transparency = 1 end
-            end
-        end
-    end
-    if shared.nyxFovCircle then
-        shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
-    end
+_G.currentTab = tabName
+for name, page in pairs(Pages) do
+page.Visible = (name == tabName)
 end
-
--- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ
+for _, btn in ipairs(Sidebar:GetChildren()) do
+if btn:IsA("TextButton") then
+if btn.Name == tabName .. "TabBtn" then
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 25, 55), BackgroundTransparency = 0}):Play()
+btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+local bStroke = btn:FindFirstChildOfClass("UIStroke")
+if bStroke then bStroke.Transparency = 0.3 end
+else
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,0,0), BackgroundTransparency = 1}):Play()
+btn.TextColor3 = Theme.TextSub
+local bStroke = btn:FindFirstChildOfClass("UIStroke")
+if bStroke then bStroke.Transparency = 1 end
+end
+end
+end
+if shared.nyxFovCircle then
+shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
+end
+end
+-- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
 local isMenuOpen = true
 local isTweening = false
 local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0)
 local normalSize = UDim2.new(0, 550, 0, 390)
-
 local function toggleMenuVisuals(open)
-    if isTweening then return end
-    isTweening = true
-    local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-    if open then
-        MainFrame.Visible = true
-        if shared.nyxFovCircle then shared.nyxFovCircle.Visible = (_G.currentTab == "Combat") and _G.aimbotToggle end
-        TweenService:Create(MainFrame, tInfo, {Size = normalSize, Position = lastSavedPos, BackgroundTransparency = 0}):Play()
-        task.wait(0.4)
-        isMenuOpen = true
-    else
-        if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
-        lastSavedPos = MainFrame.Position
-        local targetPos = InfoBarFrame.Position
-        local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
-        collapseTween:Play()
-        collapseTween.Completed:Wait()
-        MainFrame.Visible = false
-        isMenuOpen = false
-    end
-    isTweening = false
+if isTweening then return end
+isTweening = true
+local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+if open then
+MainFrame.Visible = true
+if shared.nyxFovCircle then shared.nyxFovCircle.Visible = (_G.currentTab == "Combat") and _G.aimbotToggle end
+TweenService:Create(MainFrame, tInfo, {Size = normalSize, Position = lastSavedPos, BackgroundTransparency = 0}):Play()
+task.wait(0.4)
+isMenuOpen = true
+else
+if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
+lastSavedPos = MainFrame.Position
+local targetPos = InfoBarFrame.Position
+local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
+collapseTween:Play()
+collapseTween.Completed:Wait()
+MainFrame.Visible = false
+isMenuOpen = false
 end
-
+isTweening = false
+end
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
-        toggleMenuVisuals(not isMenuOpen)
-    end
+if not gameProcessed and input.KeyCode == Enum.KeyCode.RightControl then
+toggleMenuVisuals(not isMenuOpen)
+end
 end)
-
 local tabCount = 0
 local function createTabButton(name, iconText)
-    local btn = Instance.new("TextButton")
-    btn.Name = name .. "TabBtn"
-    btn.Parent = Sidebar
-    btn.Size = UDim2.new(1, -16, 0, 36)
-    btn.Position = UDim2.new(0, 8, 0, 65 + (tabCount * 42))
-    btn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
-    btn.BackgroundTransparency = 1
-    btn.Text = "  " .. iconText .. "   " .. name
-    btn.TextColor3 = Theme.TextSub
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 12
-    btn.TextXAlignment = Enum.TextXAlignment.Left
-    btn.TextYAlignment = Enum.TextYAlignment.Center
-    addCorners(btn, 6)
-    local bStroke = addStroke(btn, Theme.Primary, 1, 1)
-    table.insert(ThemeObjects.Strokes, bStroke)
-
-    btn.MouseEnter:Connect(function()
-        if _G.currentTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(50, 35, 80), TextColor3 = Color3.fromRGB(220, 210, 245)}):Play()
-        end
-    end)
-    btn.MouseLeave:Connect(function()
-        if _G.currentTab ~= name then
-            TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Theme.TextSub}):Play()
-        end
-    end)
-    btn.MouseButton1Click:Connect(function() showTab(name) end)
-    tabCount = tabCount + 1
+local btn = Instance.new("TextButton")
+btn.Name = name .. "TabBtn"
+btn.Parent = Sidebar
+btn.Size = UDim2.new(1, -16, 0, 36)
+btn.Position = UDim2.new(0, 8, 0, 65 + (tabCount * 42))
+btn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
+btn.BackgroundTransparency = 1
+btn.Text = "  " .. iconText .. "   " .. name
+btn.TextColor3 = Theme.TextSub
+btn.Font = Enum.Font.GothamBold
+btn.TextSize = 12
+btn.TextXAlignment = Enum.TextXAlignment.Left
+btn.TextYAlignment = Enum.TextYAlignment.Center
+addCorners(btn, 6)
+local bStroke = addStroke(btn, Theme.Primary, 1, 1)
+table.insert(ThemeObjects.Strokes, bStroke)
+btn.MouseEnter:Connect(function()
+if _G.currentTab ~= name then
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(50, 35, 80), TextColor3 = Color3.fromRGB(220, 210, 245)}):Play()
 end
-
+end)
+btn.MouseLeave:Connect(function()
+if _G.currentTab ~= name then
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Theme.TextSub}):Play()
+end
+end)
+btn.MouseButton1Click:Connect(function() showTab(name) end)
+tabCount = tabCount + 1
+end
 createTabButton("Combat", "⚔")
 createTabButton("Visuals", "👁")
 createTabButton("World", "🌐")
 createTabButton("Settings", "⚙")
-
--- СВИТЧИ (КОМПОНЕНТЫ)
+-- СВИТЧИ
 local function createHazeToggle(text, tabContainer, callback)
-    local frame = Instance.new("Frame")
-    frame.Size = UDim2.new(1, -4, 0, 44)
-    frame.BackgroundColor3 = Theme.Card
-    frame.BackgroundTransparency = 0.4
-    frame.Parent = tabContainer
-    addCorners(frame, 8)
-    addStroke(frame, Theme.Stroke, 1, 0.4)
-
-    local label = Instance.new("TextLabel")
-    label.Size = UDim2.new(1, -60, 1, 0)
-    label.Position = UDim2.new(0, 12, 0, 0)
-    label.BackgroundTransparency = 1
-    label.Text = text
-    label.TextColor3 = Theme.TextMain
-    label.Font = Enum.Font.GothamSemibold
-    label.TextSize = 13
-    label.TextXAlignment = Enum.TextXAlignment.Left
-    label.TextYAlignment = Enum.TextYAlignment.Center
-    label.Parent = frame
-
-    local toggleBg = Instance.new("TextButton")
-    toggleBg.Size = UDim2.new(0, 40, 0, 22)
-    toggleBg.Position = UDim2.new(1, -52, 0.5, -11)
-    toggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
-    toggleBg.Text = ""
-    toggleBg.Parent = frame
-    addCorners(toggleBg, 11)
-    addStroke(toggleBg, Color3.fromRGB(55, 45, 75), 1)
-
-    local ball = Instance.new("Frame")
-    ball.Size = UDim2.new(0, 16, 0, 16)
-    ball.Position = UDim2.new(0, 3, 0.5, -8)
-    ball.BackgroundColor3 = Color3.fromRGB(150, 135, 175)
-    ball.Parent = toggleBg
-    addCorners(ball, 8)
-
-    local state = false
-    frame.MouseEnter:Connect(function()
-        TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1, BackgroundColor3 = Color3.fromRGB(24, 18, 38)}):Play()
-    end)
-    frame.MouseLeave:Connect(function()
-        TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.4, BackgroundColor3 = Theme.Card}):Play()
-    end)
-
-    toggleBg.MouseButton1Click:Connect(function()
-        state = not state
-        if state then
-            TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
-            TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-            table.insert(ThemeObjects.Accents, toggleBg)
-        else
-            TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
-            TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Color3.fromRGB(150, 135, 175)}):Play()
-            for i, v in ipairs(ThemeObjects.Accents) do
-                if v == toggleBg then table.remove(ThemeObjects.Accents, i) break end
-            end
-        end
-        callback(state)
-    end)
-    return frame
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(1, -4, 0, 44)
+frame.BackgroundColor3 = Theme.Card
+frame.BackgroundTransparency = 0.4
+frame.Parent = tabContainer
+addCorners(frame, 8)
+addStroke(frame, Theme.Stroke, 1, 0.4)
+local label = Instance.new("TextLabel")
+label.Size = UDim2.new(1, -60, 1, 0)
+label.Position = UDim2.new(0, 12, 0, 0)
+label.BackgroundTransparency = 1
+label.Text = text
+label.TextColor3 = Theme.TextMain
+label.Font = Enum.Font.GothamSemibold
+label.TextSize = 13
+label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextYAlignment = Enum.TextYAlignment.Center
+label.Parent = frame
+local toggleBg = Instance.new("TextButton")
+toggleBg.Size = UDim2.new(0, 40, 0, 22)
+toggleBg.Position = UDim2.new(1, -52, 0.5, -11)
+toggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
+toggleBg.Text = ""
+toggleBg.Parent = frame
+addCorners(toggleBg, 11)
+addStroke(toggleBg, Color3.fromRGB(55, 45, 75), 1)
+local ball = Instance.new("Frame")
+ball.Size = UDim2.new(0, 16, 0, 16)
+ball.Position = UDim2.new(0, 3, 0.5, -8)
+ball.BackgroundColor3 = Color3.fromRGB(150, 135, 175)
+ball.Parent = toggleBg
+addCorners(ball, 8)
+local state = false
+frame.MouseEnter:Connect(function()
+TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1, BackgroundColor3 = Color3.fromRGB(24, 18, 38)}):Play()
+end)
+frame.MouseLeave:Connect(function()
+TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.4, BackgroundColor3 = Theme.Card}):Play()
+end)
+toggleBg.MouseButton1Click:Connect(function()
+state = not state
+if state then
+TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
+TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+table.insert(ThemeObjects.Accents, toggleBg)
+else
+TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
+TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Color3.fromRGB(150, 135, 175)}):Play()
+for i, v in ipairs(ThemeObjects.Accents) do
+if v == toggleBg then table.remove(ThemeObjects.Accents, i) break end
 end
-
+end
+callback(state)
+end)
+return frame
+end
 local function getEquippedItem(plr)
-    if plr.Character then
-        for _, obj in ipairs(plr.Character:GetChildren()) do
-            if obj:IsA("Tool") then return "[" .. obj.Name .. "]" end
-        end
-    end
-    return "[Hands]"
+if plr.Character then
+for _, obj in ipairs(plr.Character:GetChildren()) do
+if obj:IsA("Tool") then return "[" .. obj.Name .. "]" end
 end
-
+end
+return "[Hands]"
+end
 -- ==========================================
--- 👁️ В К Л А Д К А  « V I S U A L S »
+-- В К Л А Д К А  « V I S U A L S »
 -- ==========================================
 local espToggle = false
 local espConnections = {}
-
 createHazeToggle("Player ESP", Pages.Visuals, function(state)
-    espToggle = state
-    if espToggle then
-        local function createESP(plr)
-            if plr == LocalPlayer then return end
-
-            local function addHighlight(char)
-                if not espToggle or not char then return end
-                task.wait(0.2)
-                if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
-
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "ESPHighlight"
-                highlight.FillColor = Theme.Primary
-                highlight.FillTransparency = 0.6
-                highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
-                highlight.Parent = char
-
-                local head = char:WaitForChild("Head", 5)
-                if head then
-                    if head:FindFirstChild("ESPName") then head.ESPName:Destroy() end
-                    local billboard = Instance.new("BillboardGui")
-                    billboard.Name = "ESPName"
-                    billboard.AlwaysOnTop = true
-                    billboard.Size = UDim2.new(0, 200, 0, 60)
-                    billboard.StudsOffset = Vector3.new(0, 3, 0)
-                    billboard.Parent = head
-
-                    local nameLabel = Instance.new("TextLabel")
-                    nameLabel.Size = UDim2.new(1, 0, 0, 20)
-                    nameLabel.BackgroundTransparency = 1
-                    nameLabel.Text = plr.Name .. " [0m]"
-                    nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
-                    nameLabel.TextSize = 12
-                    nameLabel.Font = Enum.Font.GothamBold
-                    nameLabel.Parent = billboard
-
-                    local invLabel = Instance.new("TextLabel")
-                    invLabel.Position = UDim2.new(0, 0, 0, 18)
-                    invLabel.Size = UDim2.new(1, 0, 0, 15)
-                    invLabel.BackgroundTransparency = 1
-                    invLabel.Text = getEquippedItem(plr)
-                    invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
-                    invLabel.TextSize = 10
-                    invLabel.Font = Enum.Font.GothamSemibold
-                    invLabel.Parent = billboard
-
-                    local updateConn
-                    updateConn = RunService.RenderStepped:Connect(function()
-                        if espToggle and char and char.Parent and head and head.Parent and billboard and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
-                            local distanceEnd = (head.Position - LocalPlayer.Character.Head.Position).Magnitude
-                            local distanceMeters = math.round(distanceEnd / 3.5)
-                            nameLabel.Text = plr.Name .. " [" .. tostring(distanceMeters) .. "m]"
-                            invLabel.Text = getEquippedItem(plr)
-                        else
-                            if updateConn then updateConn:Disconnect() end
-                        end
-                    end)
-                    table.insert(espConnections, updateConn)
-                end
-            end
-            if plr.Character then addHighlight(plr.Character) end
-            local cConn = plr.CharacterAdded:Connect(addHighlight)
-            table.insert(espConnections, cConn)
-        end
-        for _, p in ipairs(Players:GetPlayers()) do createESP(p) end
-        local pAdded = Players.PlayerAdded:Connect(createESP)
-        table.insert(espConnections, pAdded)
-    else
-        for _, conn in ipairs(espConnections) do if conn then conn:Disconnect() end end
-        espConnections = {}
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr.Character then
-                if plr.Character:FindFirstChild("ESPHighlight") then plr.Character.ESPHighlight:Destroy() end
-                local head = plr.Character:FindFirstChild("Head")
-                if head and head:FindFirstChild("ESPName") then head.ESPName:Destroy() end
-            end
-        end
-    end
+espToggle = state
+if espToggle then
+local function createESP(plr)
+if plr == game.Players.LocalPlayer then return end
+local function addHighlight(char)
+if not espToggle then return end
+task.wait(0.1)
+if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
+local highlight = Instance.new("Highlight")
+highlight.Name = "ESPHighlight"
+highlight.FillColor = Theme.Primary
+highlight.FillTransparency = 0.6
+highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
+highlight.Parent = char
+local head = char:WaitForChild("Head", 5)
+if head then
+if head:FindFirstChild("ESPName") then head.ESPName:Destroy() end
+local billboard = Instance.new("BillboardGui")
+billboard.Name = "ESPName"
+billboard.AlwaysOnTop = true
+billboard.Size = UDim2.new(0, 200, 0, 60)
+billboard.StudsOffset = Vector3.new(0, 3, 0)
+billboard.Parent = head
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(1, 0, 0, 20)
+nameLabel.BackgroundTransparency = 1
+nameLabel.Text = plr.Name .. " [0m]"
+nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
+nameLabel.TextSize = 12
+nameLabel.Font = Enum.Font.GothamBold
+nameLabel.TextYAlignment = Enum.TextYAlignment.Center
+nameLabel.Parent = billboard
+local invLabel = Instance.new("TextLabel")
+invLabel.Position = UDim2.new(0, 0, 0, 18)
+invLabel.Size = UDim2.new(1, 0, 0, 15)
+invLabel.BackgroundTransparency = 1
+invLabel.Text = getEquippedItem(plr)
+invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
+invLabel.TextSize = 10
+invLabel.Font = Enum.Font.GothamSemibold
+invLabel.TextYAlignment = Enum.TextYAlignment.Center
+invLabel.Parent = billboard
+local updateConn
+updateConn = RunService.RenderStepped:Connect(function()
+if espToggle and char and char.Parent and head and billboard and nameLabel and invLabel and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Head") then
+local distanceEnd = (head.Position - LocalPlayer.Character.Head.Position).Magnitude
+local distanceMeters = math.round(distanceEnd / 3.5)
+nameLabel.Text = plr.Name .. " [" .. tostring(distanceMeters) .. "m]"
+invLabel.Text = getEquippedItem(plr)
+else
+if updateConn then updateConn:Disconnect() end
+end
 end)
-
--- Legit Head ESP
+table.insert(espConnections, updateConn)
+end
+end
+if plr.Character then addHighlight(plr.Character) end
+local cConn = plr.CharacterAdded:Connect(addHighlight)
+table.insert(espConnections, cConn)
+end
+for _, p in ipairs(game.Players:GetPlayers()) do createESP(p) end
+local pAdded = game.Players.PlayerAdded:Connect(createESP)
+table.insert(espConnections, pAdded)
+else
+for _, conn in ipairs(espConnections) do if conn then conn:Disconnect() end end
+espConnections = {}
+for _, plr in ipairs(game.Players:GetPlayers()) do
+if plr.Character then
+if plr.Character:FindFirstChild("ESPHighlight") then plr.Character.ESPHighlight:Destroy() end
+local head = plr.Character:FindFirstChild("Head")
+if head and head:FindFirstChild("ESPName") then head.ESPName:Destroy() end
+end
+end
+end
+end)
 local legitHeadToggle = false
 _G.showThroughWalls = false
 local headPlayerConns = {}
-
 local DropdownContainer = Instance.new("Frame")
 DropdownContainer.Size = UDim2.new(1, -4, 0, 42)
 DropdownContainer.BackgroundColor3 = Theme.Card
@@ -607,12 +581,10 @@ DropdownContainer.ClipsDescendants = true
 DropdownContainer.Parent = Pages.Visuals
 addCorners(DropdownContainer, 8)
 addStroke(DropdownContainer, Theme.Stroke, 1, 0.5)
-
 local MainToggleFrame = Instance.new("Frame")
 MainToggleFrame.Size = UDim2.new(1, 0, 0, 42)
 MainToggleFrame.BackgroundTransparency = 1
 MainToggleFrame.Parent = DropdownContainer
-
 local MainLabel = Instance.new("TextLabel")
 MainLabel.Size = UDim2.new(1, -90, 1, 0)
 MainLabel.Position = UDim2.new(0, 12, 0, 0)
@@ -622,8 +594,8 @@ MainLabel.TextColor3 = Theme.TextMain
 MainLabel.Font = Enum.Font.GothamSemibold
 MainLabel.TextSize = 13
 MainLabel.TextXAlignment = Enum.TextXAlignment.Left
+MainLabel.TextYAlignment = Enum.TextYAlignment.Center
 MainLabel.Parent = MainToggleFrame
-
 local ArrowBtn = Instance.new("TextButton")
 ArrowBtn.Size = UDim2.new(0, 24, 0, 24)
 ArrowBtn.Position = UDim2.new(1, -78, 0.5, -12)
@@ -633,7 +605,6 @@ ArrowBtn.TextColor3 = Theme.TextSub
 ArrowBtn.Font = Enum.Font.GothamBold
 ArrowBtn.TextSize = 12
 ArrowBtn.Parent = MainToggleFrame
-
 local MainToggleBg = Instance.new("TextButton")
 MainToggleBg.Size = UDim2.new(0, 38, 0, 20)
 MainToggleBg.Position = UDim2.new(1, -48, 0.5, -10)
@@ -641,20 +612,17 @@ MainToggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 MainToggleBg.Text = ""
 MainToggleBg.Parent = MainToggleFrame
 addCorners(MainToggleBg, 10)
-
 local MainBall = Instance.new("Frame")
 MainBall.Size = UDim2.new(0, 14, 0, 14)
 MainBall.Position = UDim2.new(0, 3, 0.5, -7)
 MainBall.BackgroundColor3 = Color3.fromRGB(160, 145, 180)
 MainBall.Parent = MainToggleBg
 addCorners(MainBall, 7)
-
 local SubToggleFrame = Instance.new("Frame")
 SubToggleFrame.Size = UDim2.new(1, 0, 0, 35)
 SubToggleFrame.Position = UDim2.new(0, 0, 0, 44)
 SubToggleFrame.BackgroundTransparency = 1
 SubToggleFrame.Parent = DropdownContainer
-
 local SubLabel = Instance.new("TextLabel")
 SubLabel.Size = UDim2.new(1, -60, 1, 0)
 SubLabel.Position = UDim2.new(0, 24, 0, 0)
@@ -664,8 +632,8 @@ SubLabel.TextColor3 = Theme.TextSub
 SubLabel.Font = Enum.Font.GothamSemibold
 SubLabel.TextSize = 12
 SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+SubLabel.TextYAlignment = Enum.TextYAlignment.Center
 SubLabel.Parent = SubToggleFrame
-
 local SubToggleBg = Instance.new("TextButton")
 SubToggleBg.Size = UDim2.new(0, 34, 0, 16)
 SubToggleBg.Position = UDim2.new(1, -48, 0.5, -8)
@@ -673,298 +641,217 @@ SubToggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 SubToggleBg.Text = ""
 SubToggleBg.Parent = SubToggleFrame
 addCorners(SubToggleBg, 8)
-
 local SubBall = Instance.new("Frame")
 SubBall.Size = UDim2.new(0, 10, 0, 10)
 SubBall.Position = UDim2.new(0, 3, 0.5, -5)
 SubBall.BackgroundColor3 = Color3.fromRGB(140, 130, 155)
 SubBall.Parent = SubToggleBg
 addCorners(SubBall, 5)
-
 local function createLegitHeadESP(plr)
-    if plr == LocalPlayer then return end
-    local function addHeadHighlight(char)
-        if not legitHeadToggle or not char then return end
-        local head = char:WaitForChild("Head", 5)
-        if head then
-            if head:FindFirstChild("LegitHeadGlow") then head.LegitHeadGlow:Destroy() end
-            local sphere = Instance.new("BoxHandleAdornment")
-            sphere.Name = "LegitHeadGlow"
-            sphere.Adornee = head
-            sphere.Size = Vector3.new(1.3, 1.3, 1.3)
-            sphere.Color3 = Color3.fromRGB(0, 255, 120)
-            sphere.Transparency = 0.25
-            sphere.AlwaysOnTop = _G.showThroughWalls
-            sphere.ZIndex = 10
-            sphere.Parent = head
-        end
-    end
-    if plr.Character then addHeadHighlight(plr.Character) end
-    local conn = plr.CharacterAdded:Connect(addHeadHighlight)
-    table.insert(headPlayerConns, conn)
+if plr == game.Players.LocalPlayer then return end
+local function addHeadHighlight(char)
+if not legitHeadToggle then return end
+local head = char:WaitForChild("Head", 5)
+if head then
+if head:FindFirstChild("LegitHeadGlow") then head.LegitHeadGlow:Destroy() end
+local sphere = Instance.new("BoxHandleAdornment")
+sphere.Name = "LegitHeadGlow"
+sphere.Adornee = head
+sphere.Size = Vector3.new(1.3, 1.3, 1.3)
+sphere.Color3 = Color3.fromRGB(0, 255, 120)
+sphere.Transparency = 0.25
+sphere.AlwaysOnTop = _G.showThroughWalls
+sphere.ZIndex = 10
+sphere.Parent = head
 end
-
+end
+if plr.Character then addHeadHighlight(plr.Character) end
+local conn = plr.CharacterAdded:Connect(addHeadHighlight)
+table.insert(headPlayerConns, conn)
+end
 local function updateAllHeads()
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character then
-            local head = plr.Character:FindFirstChild("Head")
-            if head and head:FindFirstChild("LegitHeadGlow") then
-                head.LegitHeadGlow.AlwaysOnTop = _G.showThroughWalls
-            end
-        end
-    end
+for _, plr in ipairs(game.Players:GetPlayers()) do
+if plr ~= LocalPlayer and plr.Character then
+local head = plr.Character:FindFirstChild("Head")
+if head and head:FindFirstChild("LegitHeadGlow") then
+head.LegitHeadGlow.AlwaysOnTop = _G.showThroughWalls
 end
-
+end
+end
+end
 local function clearLegitHeadESP()
-    for _, conn in ipairs(headPlayerConns) do if conn then conn:Disconnect() end end
-    headPlayerConns = {}
-    for _, plr in ipairs(Players:GetPlayers()) do
-        if plr.Character then
-            local head = plr.Character:FindFirstChild("Head")
-            if head then
-                local glow = head:FindFirstChild("LegitHeadGlow")
-                if glow then glow:Destroy() end
-            end
-        end
-    end
+for _, conn in ipairs(headPlayerConns) do if conn then conn:Disconnect() end end
+headPlayerConns = {}
+for _, plr in ipairs(game.Players:GetPlayers()) do
+if plr.Character then
+local head = plr.Character:FindFirstChild("Head")
+if head then
+local glow = head:FindFirstChild("LegitHeadGlow")
+if glow then glow:Destroy() end
 end
-
+end
+end
+end
 local isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
-    isDropdownOpen = not isDropdownOpen
-    local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-    if isDropdownOpen then
-        TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, -4, 0, 82)}):Play()
-        TweenService:Create(ArrowBtn, tInfo, {Rotation = 180}):Play()
-    else
-        TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, -4, 0, 42)}):Play()
-        TweenService:Create(ArrowBtn, tInfo, {Rotation = 0}):Play()
-    end
+if isTweening then return end
+isDropdownOpen = not isDropdownOpen
+local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+if isDropdownOpen then
+TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, -4, 0, 82)}):Play()
+TweenService:Create(ArrowBtn, tInfo, {Rotation = 180}):Play()
+else
+TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, -4, 0, 42)}):Play()
+TweenService:Create(ArrowBtn, tInfo, {Rotation = 0}):Play()
+end
 end)
-
 MainToggleBg.MouseButton1Click:Connect(function()
-    legitHeadToggle = not legitHeadToggle
-    if legitHeadToggle then
-        TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
-        TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-        for _, plr in ipairs(Players:GetPlayers()) do createLegitHeadESP(plr) end
-        local pAdded = Players.PlayerAdded:Connect(createLegitHeadESP)
-        table.insert(headPlayerConns, pAdded)
-    else
-        TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
-        TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
-        clearLegitHeadESP()
-    end
+legitHeadToggle = not legitHeadToggle
+if legitHeadToggle then
+TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
+TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+for _, plr in ipairs(game.Players:GetPlayers()) do createLegitHeadESP(plr) end
+local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
+table.insert(headPlayerConns, pAdded)
+else
+TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
+TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)})
+clearLegitHeadESP()
+end
 end)
-
 SubToggleBg.MouseButton1Click:Connect(function()
-    _G.showThroughWalls = not _G.showThroughWalls
-    if _G.showThroughWalls then
-        TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
-        TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-    else
-        TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
-        TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -5), BackgroundColor3 = Color3.fromRGB(140, 130, 155)}):Play()
-    end
-    updateAllHeads()
+_G.showThroughWalls = not _G.showThroughWalls
+if _G.showThroughWalls then
+TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
+TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+else
+TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
+TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -5), BackgroundColor3 = Color3.fromRGB(140, 130, 155)}):Play()
+end
+updateAllHeads()
 end)
-
--- SupplyCrate Wallhack
 local lootEspToggle = false
 local lootConnections = {}
 createHazeToggle("SupplyCrate Wallhack", Pages.Visuals, function(state)
-    lootEspToggle = state
-    if lootEspToggle then
-        local function applyCrateESP(obj)
-            if not lootEspToggle or not obj then return end
-            if obj.Name == "SupplyCrate" and not obj:FindFirstChild("LootHighlight") then
-                local highlight = Instance.new("Highlight")
-                highlight.Name = "LootHighlight"
-                highlight.FillColor = Theme.Primary
-                highlight.FillTransparency = 0.5
-                highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
-                highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
-                highlight.Parent = obj
-            end
-        end
-        for _, obj in ipairs(workspace:GetDescendants()) do applyCrateESP(obj) end
-        local addConn = workspace.DescendantAdded:Connect(applyCrateESP)
-        table.insert(lootConnections, addConn)
-    else
-        for _, conn in ipairs(lootConnections) do if conn then conn:Disconnect() end end
-        lootConnections = {}
-        for _, obj in ipairs(workspace:GetDescendants()) do
-            if obj.Name == "SupplyCrate" and obj:FindFirstChild("LootHighlight") then
-                obj.LootHighlight:Destroy()
-            end
-        end
-    end
+lootEspToggle = state
+if lootEspToggle then
+local function applyCrateESP(obj)
+if not lootEspToggle then return end
+if obj.Name ~= "SupplyCrate" then return end
+if not obj:FindFirstChild("LootHighlight") then
+local highlight = Instance.new("Highlight")
+highlight.Name = "LootHighlight"
+highlight.FillColor = Theme.Primary
+highlight.FillTransparency = 0.5
+highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
+highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
+highlight.Parent = obj
+end
+end
+for _, obj in ipairs(workspace:GetDescendants()) do applyCrateESP(obj) end
+local addConn = workspace.DescendantAdded:Connect(applyCrateESP)
+table.insert(lootConnections, addConn)
+else
+for _, conn in ipairs(lootConnections) do if conn then conn:Disconnect() end end
+lootConnections = {}
+for _, obj in ipairs(workspace:GetDescendants()) do
+if obj.Name == "SupplyCrate" and obj:FindFirstChild("LootHighlight") then
+obj.LootHighlight:Destroy()
+end
+end
+end
 end)
-
--- Look Tracers
 local tracersToggle = false
 local tracerObjects = {}
 createHazeToggle("Look Tracers", Pages.Visuals, function(state)
-    tracersToggle = state
-    if tracersToggle then
-        local function createLookTracer(plr)
-            if plr == LocalPlayer then return end
-            local function addTracer(char)
-                if not tracersToggle or not char then return end
-                local head = char:WaitForChild("Head", 5)
-                if head then
-                    local attachmentStart = Instance.new("Attachment")
-                    attachmentStart.Parent = head
-                    local endPart = Instance.new("Part")
-                    endPart.Name = "TracerEndPart"
-                    endPart.Size = Vector3.new(0.1, 0.1, 0.1)
-                    endPart.Transparency = 1; endPart.CanCollide = false; endPart.Anchored = true
-                    endPart.Parent = char
-                    local attachmentEnd = Instance.new("Attachment")
-                    attachmentEnd.Parent = endPart
-                    local beam = Instance.new("Beam")
-                    beam.FaceCamera = true
-                    beam.Width0 = 0.16; beam.Width1 = 0.04
-                    beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-                    beam.Transparency = NumberSequence.new(0.0, 0.6)
-                    beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd
-                    beam.Parent = head
-                    local updateConn
-                    updateConn = RunService.RenderStepped:Connect(function()
-                        if tracersToggle and char and char.Parent and head and head.Parent and endPart and beam then
-                            endPart.Position = head.Position + (head.CFrame.LookVector * 125)
-                        else
-                            if updateConn then updateConn:Disconnect() end
-                        end
-                    end)
-                    table.insert(tracerObjects, updateConn)
-                end
-            end
-            if plr.Character then addTracer(plr.Character) end
-            local tcConn = plr.CharacterAdded:Connect(addTracer)
-            table.insert(tracerObjects, tcConn)
-        end
-        for _, p in ipairs(Players:GetPlayers()) do createLookTracer(p) end
-        local ptAdded = Players.PlayerAdded:Connect(createLookTracer)
-        table.insert(tracerObjects, ptAdded)
-    else
-        for _, conn in ipairs(tracerObjects) do if conn then conn:Disconnect() end end
-        tracerObjects = {}
-        for _, plr in ipairs(Players:GetPlayers()) do
-            if plr.Character then
-                if plr.Character:FindFirstChild("TracerEndPart") then plr.Character.TracerEndPart:Destroy() end
-                local head = plr.Character:FindFirstChild("Head")
-                if head and head:FindFirstChild("Beam") then head.Beam:Destroy() end
-            end
-        end
-    end
-end)
-
--- =========================================================
--- 🔥 ПЛАВНО ТАЮЩИЕ СВЕТЯЩИЕСЯ НЕОНОВЫЕ ЛИНИИ (ONLY ME) - УНИВЕРСАЛЬНЫЕ
--- =========================================================
-local bulletTracersToggle = false
-local tracerConnection = nil
-
-local function drawSmoothFadeLaser(startPos, endPos)
-    if not startPos or not endPos then return end
-    local distance = (endPos - startPos).Magnitude
-    if distance > 2000 or distance < 1 then return end
-    
-    local laserPart = Instance.new("Part")
-    laserPart.Name = "NYX_SmoothLaser"
-    laserPart.Anchored = true
-    laserPart.CanCollide = false
-    laserPart.CastShadow = false
-    laserPart.Material = Enum.Material.Neon 
-    laserPart.Color = Theme.Primary         
-    laserPart.Size = Vector3.new(0.14, 0.14, distance) 
-    laserPart.Transparency = 0              
-    laserPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
-    laserPart.Parent = workspace
-
-    local fadeTween = TweenService:Create(laserPart, TweenInfo.new(0.45, Enum.EasingStyle.Cubic, Enum.EasingDirection.Out), {
-        Size = Vector3.new(0, 0, distance),
-        Transparency = 1
-    })
-    fadeTween:Play()
-    game:GetService("Debris"):AddItem(laserPart, 0.45)
+tracersToggle = state
+if tracersToggle then
+local function createLookTracer(plr)
+if plr == game.Players.LocalPlayer then return end
+local function addTracer(char)
+if not tracersToggle then return end
+local head = char:WaitForChild("Head", 5)
+if head then
+local attachmentStart = Instance.new("Attachment")
+attachmentStart.Parent = head
+local endPart = Instance.new("Part")
+endPart.Name = "TracerEndPart"
+endPart.Size = Vector3.new(0.1, 0.1, 0.1)
+endPart.Transparency = 1; endPart.CanCollide = false; endPart.Anchored = true
+endPart.Parent = char
+local attachmentEnd = Instance.new("Attachment")
+attachmentEnd.Parent = endPart
+local beam = Instance.new("Beam")
+beam.FaceCamera = true
+beam.Width0 = 0.16; beam.Width1 = 0.04
+beam.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
+beam.Transparency = NumberSequence.new(0.0, 0.6)
+beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd
+beam.Parent = head
+local updateConn
+updateConn = RunService.RenderStepped:Connect(function()
+if char and char.Parent and head and endPart and beam then
+endPart.Position = head.Position + (head.CFrame.LookVector * 525)
+else
+if updateConn then updateConn:Disconnect() end
 end
-
-local function initWeaponTracker()
-    if tracerConnection then tracerConnection:Disconnect() end
-    
-    tracerConnection = UserInputService.InputBegan:Connect(function(input, gameProcessed)
-        if not bulletTracersToggle then return end
-        if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
-        
-        local char = LocalPlayer.Character
-        if not char or not char:FindFirstChildOfClass("Tool") then return end 
-        
-        local originPart = char:FindFirstChild("Muzzle") or char:FindFirstChild("Handle") or char:FindFirstChild("Head")
-        if not originPart then return end
-        
-        local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
-        local raycastParams = RaycastParams.new()
-        raycastParams.FilterDescendantsInstances = {char}
-        raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-        
-        local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
-        local targetPosition = result and result.Position or (mouseRay.Origin + mouseRay.Direction * 1000)
-        
-        task.spawn(drawSmoothFadeLaser, originPart.Position, targetPosition)
-    end)
+end)
+table.insert(tracerObjects, updateConn)
 end
-
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if bulletTracersToggle then initWeaponTracker() end
+end
+if plr.Character then addTracer(plr.Character) end
+local cConn = plr.CharacterAdded:Connect(addTracer)
+table.insert(tracerObjects, cConn)
+end
+for _, p in ipairs(game.Players:GetPlayers()) do createLookTracer(p) end
+local pAdded = game.Players.PlayerAdded:Connect(createLookTracer)
+table.insert(tracerObjects, pAdded)
+else
+for _, conn in ipairs(tracerObjects) do if conn then conn:Disconnect() end end
+tracerObjects = {}
+for _, plr in ipairs(game.Players:GetPlayers()) do
+if plr.Character then
+if plr.Character:FindFirstChild("TracerEndPart") then plr.Character.TracerEndPart:Destroy() end
+local head = plr.Character:FindFirstChild("Head")
+if head and head:FindFirstChild("Beam") then head.Beam:Destroy() end
+end
+end
+end
 end)
-
-createHazeToggle("Bullet Tracers (Only Me)", Pages.Visuals, function(state)
-    bulletTracersToggle = state
-    if bulletTracersToggle then
-        initWeaponTracker()
-    else
-        if tracerConnection then 
-            tracerConnection:Disconnect() 
-            tracerConnection = nil
-        end
-    end
-end)
-
--- FullBright
 local fullBrightToggle = false
 local oldAmbient, oldColorShift, oldOutdoorAmbient
 createHazeToggle("FullBright (No Darkness)", Pages.Visuals, function(state)
-    fullBrightToggle = state
-    if fullBrightToggle then
-        oldAmbient = Lighting.Ambient
-        oldColorShift = Lighting.ColorShift_Top
-        oldOutdoorAmbient = Lighting.OutdoorAmbient
-        RunService:BindToRenderStep("FullBrightLoop", 100, function()
-            Lighting.Ambient = Color3.fromRGB(255, 255, 255)
-            Lighting.ColorShift_Top = Color3.fromRGB(255, 255, 255)
-            Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-        end)
-    else
-        RunService:UnbindFromRenderStep("FullBrightLoop")
-        if oldAmbient then
-            Lighting.Ambient = oldAmbient
-            Lighting.ColorShift_Top = oldColorShift
-            Lighting.OutdoorAmbient = oldOutdoorAmbient
-        end
-    end
+fullBrightToggle = state
+if fullBrightToggle then
+oldAmbient = Lighting.Ambient
+oldColorShift = Lighting.ColorShift_Top
+oldOutdoorAmbient = Lighting.OutdoorAmbient
+shared.nyxFullBright = true
+RunService:BindToRenderStep("FullBrightLoop", 100, function()
+Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+Lighting.ColorShift_Top = Color3.fromRGB(255, 255, 255)
+Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
 end)
-
+else
+RunService:UnbindFromRenderStep("FullBrightLoop")
+shared.nyxFullBright = nil
+if oldAmbient then
+Lighting.Ambient = oldAmbient
+Lighting.ColorShift_Top = oldColorShift
+Lighting.OutdoorAmbient = oldOutdoorAmbient
+end
+end
+end)
 -- ==========================================
--- ⚔️ В К Л А Д К А  « C O M B A T »
+-- В К Л А Ч К А  « C O M B A T »
 -- ==========================================
 _G.aimbotToggle = false
 createHazeToggle("Aimbot Master", Pages.Combat, function(state)
-    _G.aimbotToggle = state
+_G.aimbotToggle = state
+if shared.nyxFovCircle then
+shared.nyxFovCircle.Visible = state and MainFrame.Visible and (_G.currentTab == "Combat")
+end
 end)
-
 local SliderLabel = Instance.new("TextLabel")
 SliderLabel.Parent = Pages.Combat
 SliderLabel.BackgroundTransparency = 1
@@ -973,13 +860,12 @@ SliderLabel.Font = Enum.Font.GothamSemibold
 SliderLabel.TextColor3 = Theme.TextSub
 SliderLabel.TextSize = 12
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
-
+SliderLabel.TextYAlignment = Enum.TextYAlignment.Center
 local SliderFrame = Instance.new("Frame")
 SliderFrame.Parent = Pages.Combat
 SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 SliderFrame.Size = UDim2.new(1, -20, 0, 8)
 addCorners(SliderFrame, 4)
-
 local SliderButton = Instance.new("TextButton")
 SliderButton.Parent = SliderFrame
 SliderButton.BackgroundColor3 = Theme.Primary
@@ -988,7 +874,6 @@ SliderButton.Position = UDim2.new(0.3, -7, 0.5, -7)
 SliderButton.Text = ""
 addCorners(SliderButton, 7)
 table.insert(ThemeObjects.Accents, SliderButton)
-
 local fovRadius = 100
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
@@ -1000,104 +885,100 @@ fovCircle.Filled = false
 fovCircle.Transparency = 0.5
 shared.nyxFovCircle = fovCircle
 SliderLabel.Text = "FOV Limit: " .. fovRadius
-
 local isDraggingSlider = false
 SliderButton.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = true end
+if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = true end
 end)
 UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = false end
+if input.UserInputType == Enum.UserInputType.MouseButton1 then isDraggingSlider = false end
 end)
 UserInputService.InputChanged:Connect(function(input)
-    if isDraggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
-        local mousePos = UserInputService:GetMouseLocation()
-        local relativeX = mousePos.X - SliderFrame.AbsolutePosition.X
-        local percentage = math.clamp(relativeX / SliderFrame.AbsoluteSize.X, 0, 1)
-        SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
-        fovRadius = math.round(percentage * 300)
-        fovCircle.Radius = fovRadius
-        SliderLabel.Text = "FOV Limit: " .. fovRadius
-    end
+if isDraggingSlider and input.UserInputType == Enum.UserInputType.MouseMovement then
+local mousePos = UserInputService:GetMouseLocation()
+local relativeX = mousePos.X - SliderFrame.AbsolutePosition.X
+local percentage = math.clamp(relativeX / SliderFrame.AbsoluteSize.X, 0, 1)
+SliderButton.Position = UDim2.new(percentage, -7, 0.5, -7)
+fovRadius = math.round(percentage * 300)
+fovCircle.Radius = fovRadius
+SliderLabel.Text = "FOV Limit: " .. fovRadius
+end
 end)
-
--- TriggerBot
 local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
-    triggerBotToggle = state
+triggerBotToggle = state
 end)
-
 RunService.RenderStepped:Connect(function()
-    if not triggerBotToggle or not LocalPlayer.Character then return end
-    local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
-    if not tool then return end
-    local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
-    if result and result.Instance and result.Instance.Parent then
-        local model = result.Instance.Parent
-        local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
-        if humanoid and humanoid.Health > 0 then
-            local targetPlayer = Players:GetPlayerFromCharacter(humanoid.Parent)
-            if targetPlayer and targetPlayer ~= LocalPlayer then
-                if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then return end
-                pcall(function() tool:Activate() end)
-            end
-        end
-    end
+if not triggerBotToggle or not LocalPlayer.Character then return end
+local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+if not tool then return end
+local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
+if result and result.Instance and result.Instance.Parent then
+local model = result.Instance.Parent
+local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
+if humanoid and humanoid.Health > 0 then
+local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
+if targetPlayer and targetPlayer ~= LocalPlayer then
+if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
+return
+end
+pcall(function() tool:Activate() end)
+end
+end
+end
 end)
-
--- Aimbot Core
 local Smoothness = 0.25
 local function isVisible(targetPart)
-    local character = LocalPlayer.Character
-    if not character then return false end
-    local raycastParams = RaycastParams.new()
-    raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
-    raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-    local origin = Camera.CFrame.Position
-    local direction = targetPart.Position - origin
-    local raycastResult = workspace:Raycast(origin, direction, raycastParams)
-    return raycastResult == nil
+local character = LocalPlayer.Character
+if not character then return false end
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
+raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+local origin = Camera.CFrame.Position
+local direction = targetPart.Position - origin
+local raycastResult = workspace:Raycast(origin, direction, raycastParams)
+return raycastResult == nil
 end
-
 local function getClosestPlayerInFOV()
-    local closestPlayer = nil
-    local shortestDistance = math.huge
-    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return nil end
-    for _, player in ipairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
-            local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
-            if onScreen then
-                local magnitude = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
-                if magnitude < fovRadius and magnitude < shortestDistance then
-                    if isVisible(player.Character.Head) then
-                        closestPlayer = player
-                        shortestDistance = magnitude
-                    end
-                end
-            end
-        end
-    end
-    return closestPlayer
+local closestPlayer = nil
+local shortestDistance = math.huge
+local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return nil end
+for _, player in ipairs(game.Players:GetPlayers()) do
+if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
+if onScreen then
+local magnitude = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
+if magnitude < fovRadius and magnitude < shortestDistance then
+closestPlayer = player
+shortestDistance = magnitude
 end
-
+end
+end
+end
+if closestPlayer and closestPlayer.Character and closestPlayer.Character:FindFirstChild("Head") then
+if isVisible(closestPlayer.Character.Head) then
+return closestPlayer
+end
+end
+return nil
+end
 RunService.RenderStepped:Connect(function()
-    local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-    fovCircle.Position = screenCenter
-    local currentActiveTab = _G.currentTab or "Combat"
-    fovCircle.Visible = _G.aimbotToggle and MainFrame.Visible and (currentActiveTab == "Combat")
-    if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
-        local target = getClosestPlayerInFOV()
-        if target and target.Character and target.Character:FindFirstChild("Head") then
-            local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
-            Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
-        end
-    end
+local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
+fovCircle.Position = screenCenter
+local currentActiveTab = _G.currentTab or "Combat"
+fovCircle.Visible = _G.aimbotToggle and MainFrame.Visible and (currentActiveTab == "Combat")
+if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+local target = getClosestPlayerInFOV()
+if target and target.Character and target.Character:FindFirstChild("Head") then
+local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
+end
+end
 end)
-
 -- ==========================================
 -- ⚙️ В К Л А Д К А  « S E T T I N G S »
 -- ==========================================
@@ -1109,8 +990,8 @@ SettingsLabel.TextColor3 = Theme.TextMain
 SettingsLabel.Font = Enum.Font.GothamBold
 SettingsLabel.TextSize = 14
 SettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+SettingsLabel.TextYAlignment = Enum.TextYAlignment.Center
 SettingsLabel.Parent = Pages.Settings
-
 local ColorsContainer = Instance.new("Frame")
 ColorsContainer.Size = UDim2.new(1, -4, 0, 70)
 ColorsContainer.BackgroundColor3 = Theme.Card
@@ -1118,41 +999,37 @@ ColorsContainer.BackgroundTransparency = 0.4
 ColorsContainer.Parent = Pages.Settings
 addCorners(ColorsContainer, 8)
 addStroke(ColorsContainer, Theme.Stroke, 1, 0.4)
-
 local ColorLayout = Instance.new("UIListLayout")
 ColorLayout.FillDirection = Enum.FillDirection.Horizontal
 ColorLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
 ColorLayout.VerticalAlignment = Enum.VerticalAlignment.Center
 ColorLayout.Padding = UDim.new(0, 16)
 ColorLayout.Parent = ColorsContainer
-
 local function createColorButton(color, name)
-    local btn = Instance.new("TextButton")
-    btn.Size = UDim2.new(0, 36, 0, 36)
-    btn.BackgroundColor3 = color
-    btn.Text = ""
-    btn.Parent = ColorsContainer
-    addCorners(btn, 18)
-    local stroke = addStroke(btn, Color3.fromRGB(255, 255, 255), 1.5, 1)
-    btn.MouseButton1Click:Connect(function()
-        for _, child in ipairs(ColorsContainer:GetChildren()) do
-            if child:IsA("TextButton") and child:FindFirstChildOfClass("UIStroke") then
-                child:FindFirstChildOfClass("UIStroke").Transparency = 1
-            end
-        end
-        stroke.Transparency = 0
-        updateMenuTheme(color)
-    end)
-    if name == "Purple" then stroke.Transparency = 0 end
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0, 36, 0, 36)
+btn.BackgroundColor3 = color
+btn.Text = ""
+btn.Parent = ColorsContainer
+addCorners(btn, 18)
+local stroke = addStroke(btn, Color3.fromRGB(255, 255, 255), 1.5, 1)
+btn.MouseButton1Click:Connect(function()
+for _, child in ipairs(ColorsContainer:GetChildren()) do
+if child:IsA("TextButton") and child:FindFirstChildOfClass("UIStroke") then
+child:FindFirstChildOfClass("UIStroke").Transparency = 1
 end
-
+end
+stroke.Transparency = 0
+updateMenuTheme(color)
+end)
+if name == "Purple" then stroke.Transparency = 0 end
+end
 createColorButton(Color3.fromRGB(138, 43, 226), "Purple")
 createColorButton(Color3.fromRGB(255, 45, 85), "Red")
 createColorButton(Color3.fromRGB(0, 235, 175), "Aqua")
 createColorButton(Color3.fromRGB(240, 170, 20), "Gold")
-
 -- Старт скрипта
 task.spawn(function()
-    showTab("Combat")
-    toggleMenuVisuals(true)
+showTab("Combat")
+toggleMenuVisuals(true)
 end)
