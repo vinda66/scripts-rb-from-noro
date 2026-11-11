@@ -1,3 +1,4 @@
+
 -- Удаляем старое меню и его FOV круг, если они были
 local oldGui = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("SimpleModMenu")
 if oldGui then oldGui:Destroy() end
@@ -5,10 +6,6 @@ if shared.nyxFovCircle then
     shared.nyxFovCircle.Visible = false 
     shared.nyxFovCircle:Remove() 
     shared.nyxFovCircle = nil 
-end
-if shared.nyxFullBright then
-    game:GetService("RunService"):UnbindFromRenderStep("FullBrightLoop")
-    shared.nyxFullBright = nil
 end
 
 local TweenService = game:GetService("TweenService")
@@ -133,7 +130,7 @@ fadeTween.Completed:Wait()
 LoadingScreen:Destroy()
 
 -- ==========================================
--- 👁️ КОМПАКТНАЯ ПОЛОСКА СО ЗНАЧКОМ
+-- 👁️ КОМПАКТНАЯ ПОЛОСКА СО ЗНАЧКОМ (ВВЕРХУ ПО ЦЕНТРУ)
 -- ==========================================
 local InfoBarFrame = Instance.new("Frame")
 InfoBarFrame.Name = "NYX_InfoBar"
@@ -166,7 +163,7 @@ MainFrame.Name = "ModMenu"
 MainFrame.Parent = ScreenGui
 MainFrame.BackgroundColor3 = Theme.Background
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 550, 0, 390)
+MainFrame.Size = UDim2.new(0, 700, 0, 500)
 MainFrame.Active = true
 MainFrame.ClipsDescendants = true
 addCorners(MainFrame, 14)
@@ -321,9 +318,6 @@ local layout = Instance.new("UIListLayout")
 layout.SortOrder = Enum.SortOrder.LayoutOrder
 layout.Padding = UDim.new(0, 8)
 layout.Parent = page
-layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-page.CanvasSize = UDim2.new(0, 0, 0, layout.AbsoluteContentSize.Y + 10)
-end)
 Pages[name] = page
 end
 createTabFrame("Combat")
@@ -352,6 +346,9 @@ if bStroke then bStroke.Transparency = 1 end
 end
 end
 end
+if shared.nyxFovCircle then
+shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
+end
 end
 -- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
 local isMenuOpen = true
@@ -364,10 +361,12 @@ isTweening = true
 local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 if open then
 MainFrame.Visible = true
+if shared.nyxFovCircle then shared.nyxFovCircle.Visible = (_G.currentTab == "Combat") and _G.aimbotToggle end
 TweenService:Create(MainFrame, tInfo, {Size = normalSize, Position = lastSavedPos, BackgroundTransparency = 0}):Play()
 task.wait(0.4)
 isMenuOpen = true
 else
+if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
 lastSavedPos = MainFrame.Position
 local targetPos = InfoBarFrame.Position
 local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
@@ -687,7 +686,7 @@ end
 end
 end
 end
-local isDropdownOpen = false
+isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
 if isTweening then return end
 isDropdownOpen = not isDropdownOpen
@@ -785,7 +784,7 @@ beam.Attachment0 = attachmentStart; beam.Attachment1 = attachmentEnd
 beam.Parent = head
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
-if char and char.Parent battling and head and endPart and beam then
+if char and char.Parent and head and endPart and beam then
 endPart.Position = head.Position + (head.CFrame.LookVector * 525)
 else
 if updateConn then updateConn:Disconnect() end
@@ -795,22 +794,75 @@ table.insert(tracerObjects, updateConn)
 end
 end
 if plr.Character then addTracer(plr.Character) end
-local cConn = plr.CharacterAdded:Connect(addTracer)
-table.insert(tracerObjects, cConn)
+plr.CharacterAdded:Connect(addTracer)
 end
 for _, p in ipairs(game.Players:GetPlayers()) do createLookTracer(p) end
-local pAdded = game.Players.PlayerAdded:Connect(createLookTracer)
-table.insert(tracerObjects, pAdded)
 else
 for _, conn in ipairs(tracerObjects) do if conn then conn:Disconnect() end end
 tracerObjects = {}
 for _, plr in ipairs(game.Players:GetPlayers()) do
-if plr.Character then
-if plr.Character:FindFirstChild("TracerEndPart") then plr.Character.TracerEndPart:Destroy() end
-local head = plr.Character:FindFirstChild("Head")
-if head and head:FindFirstChild("Beam") then head.Beam:Destroy() end
+if plr.Character and plr.Character:FindFirstChild("TracerEndPart") then
+plr.Character.TracerEndPart:Destroy()
 end
 end
+end
+end)
+local bulletTracersToggle = false
+local lastActiveWeapon = nil
+local weaponConnection = nil
+local function createLaserBeam(startPos, endPos)
+local distance = (endPos - startPos).Magnitude
+local laserPart = Instance.new("Part")
+laserPart.Name = "NYX_BulletLaser"
+laserPart.Anchored = true
+laserPart.CanCollide = false
+laserPart.Material = Enum.Material.Neon
+laserPart.Color = Theme.Primary
+laserPart.Size = Vector3.new(0.08, 0.08, distance)
+laserPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
+laserPart.Parent = workspace
+TweenService:Create(laserPart, TweenInfo.new(0.4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+Size = Vector3.new(0, 0, distance),
+Transparency = 1
+}):Play()
+pcall(function()
+game:GetService("Debris"):AddItem(laserPart, 0.4)
+end)
+end
+local function trackWeaponFire()
+if weaponConnection then weaponConnection:Disconnect() end
+local char = LocalPlayer.Character
+if not char then return end
+local tool = char:FindFirstChildOfClass("Tool")
+if tool then
+weaponConnection = tool.Activated:Connect(function()
+if not bulletTracersToggle then return end
+local handle = tool:FindFirstChild("Handle") or tool:FindFirstChildWhichIsA("BasePart")
+if handle then
+local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2, 0)
+local raycastResult = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000)
+local hitPos = raycastResult and raycastResult.Position or (mouseRay.Origin + mouseRay.Direction * 500)
+createLaserBeam(handle.Position, hitPos)
+end
+end)
+end
+end
+createHazeToggle("Bullet Tracers (Theme Accent)", Pages.Visuals, function(state)
+bulletTracersToggle = state
+if bulletTracersToggle then
+trackWeaponFire()
+RunService.RenderStepped:Connect(function()
+local char = LocalPlayer.Character
+if char then
+local currentTool = char:FindFirstChildOfClass("Tool")
+if currentTool and currentTool ~= lastActiveWeapon then
+lastActiveWeapon = currentTool
+trackWeaponFire()
+end
+end
+end)
+elseif weaponConnection then
+weaponConnection:Disconnect()
 end
 end)
 local fullBrightToggle = false
@@ -821,7 +873,6 @@ if fullBrightToggle then
 oldAmbient = Lighting.Ambient
 oldColorShift = Lighting.ColorShift_Top
 oldOutdoorAmbient = Lighting.OutdoorAmbient
-shared.nyxFullBright = true
 RunService:BindToRenderStep("FullBrightLoop", 100, function()
 Lighting.Ambient = Color3.fromRGB(255, 255, 255)
 Lighting.ColorShift_Top = Color3.fromRGB(255, 255, 255)
@@ -829,7 +880,6 @@ Lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
 end)
 else
 RunService:UnbindFromRenderStep("FullBrightLoop")
-shared.nyxFullBright = nil
 if oldAmbient then
 Lighting.Ambient = oldAmbient
 Lighting.ColorShift_Top = oldColorShift
@@ -895,149 +945,78 @@ fovCircle.Radius = fovRadius
 SliderLabel.Text = "FOV Limit: " .. fovRadius
 end
 end)
--- ГЛОБАЛЬНАЯ НАСТРОЙКА ЧАСТИ ТЕЛА ДЛЯ ЗАХВАТА ЦЕЛИ
-_G.aimbotTargetPart = "Head"
--- СОЗДАНИЕ ВЫПАДАЮЩЕГО СПИСКА (DROPDOWN) ДЛЯ ВЫБОРА ХИТБОКСА
-local TargetDropdownContainer = Instance.new("Frame")
-TargetDropdownContainer.Size = UDim2.new(1, -20, 0, 40)
-TargetDropdownContainer.BackgroundColor3 = Theme.Card
-TargetDropdownContainer.BackgroundTransparency = 0.4
-TargetDropdownContainer.ClipsDescendants = true
-TargetDropdownContainer.Parent = Pages.Combat
-addCorners(TargetDropdownContainer, 8)
-addStroke(TargetDropdownContainer, Theme.Stroke, 1, 0.5)
-local DropMainFrame = Instance.new("Frame")
-DropMainFrame.Size = UDim2.new(1, 0, 0, 40)
-DropMainFrame.BackgroundTransparency = 1
-DropMainFrame.Parent = TargetDropdownContainer
-local DropLabel = Instance.new("TextLabel")
-DropLabel.Size = UDim2.new(1, -120, 1, 0)
-DropLabel.Position = UDim2.new(0, 12, 0, 0)
-DropLabel.BackgroundTransparency = 1
-DropLabel.Text = "Target Part: Head"
-DropLabel.TextColor3 = Theme.TextMain
-DropLabel.Font = Enum.Font.GothamSemibold
-DropLabel.TextSize = 13
-DropLabel.TextXAlignment = Enum.TextXAlignment.Left
-DropLabel.TextYAlignment = Enum.TextYAlignment.Center
-DropLabel.Parent = DropMainFrame
-local DropArrowBtn = Instance.new("TextButton")
-DropArrowBtn.Size = UDim2.new(0, 30, 0, 30)
-DropArrowBtn.Position = UDim2.new(1, -36, 0.5, -15)
-DropArrowBtn.BackgroundTransparency = 1
-DropArrowBtn.Text = "▼"
-DropArrowBtn.TextColor3 = Theme.TextSub
-DropArrowBtn.Font = Enum.Font.GothamBold
-DropArrowBtn.TextSize = 12
-DropArrowBtn.Parent = DropMainFrame
-local DropContentFrame = Instance.new("Frame")
-DropContentFrame.Size = UDim2.new(1, 0, 0, 60)
-DropContentFrame.Position = UDim2.new(0, 0, 0, 40)
-DropContentFrame.BackgroundTransparency = 1
-DropContentFrame.Parent = TargetDropdownContainer
-local HeadOptionBtn = Instance.new("TextButton")
-HeadOptionBtn.Size = UDim2.new(1, -16, 0, 26)
-HeadOptionBtn.Position = UDim2.new(0, 8, 0, 2)
-HeadOptionBtn.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
-HeadOptionBtn.Text = "Голова (Head)"
-HeadOptionBtn.TextColor3 = Color3.fromRGB(200, 185, 230)
-HeadOptionBtn.Font = Enum.Font.GothamSemibold
-HeadOptionBtn.TextSize = 11
-HeadOptionBtn.Parent = DropContentFrame
-addCorners(HeadOptionBtn, 4)
-local TorsoOptionBtn = Instance.new("TextButton")
-TorsoOptionBtn.Size = UDim2.new(1, -16, 0, 26)
-TorsoOptionBtn.Position = UDim2.new(0, 8, 0, 30)
-TorsoOptionBtn.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
-TorsoOptionBtn.Text = "Тело (HumanoidRootPart)"
-TorsoOptionBtn.TextColor3 = Theme.TextSub
-TorsoOptionBtn.Font = Enum.Font.GothamSemibold
-TorsoOptionBtn.TextSize = 11
-TorsoOptionBtn.Parent = DropContentFrame
-addCorners(TorsoOptionBtn, 4)
-local isTargetDropOpen = false
-DropArrowBtn.MouseButton1Click:Connect(function()
-isTargetDropOpen = not isTargetDropOpen
-local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-if isTargetDropOpen then
-TweenService:Create(TargetDropdownContainer, tInfo, {Size = UDim2.new(1, -20, 0, 102)}):Play()
-TweenService:Create(DropArrowBtn, tInfo, {Rotation = 180}):Play()
-else
-TweenService:Create(TargetDropdownContainer, tInfo, {Size = UDim2.new(1, -20, 0, 40)}):Play()
-TweenService:Create(DropArrowBtn, tInfo, {Rotation = 0}):Play()
-end
-end)
-HeadOptionBtn.MouseButton1Click:Connect(function()
-_G.aimbotTargetPart = "Head"
-DropLabel.Text = "Target Part: Head"
-HeadOptionBtn.TextColor3 = Color3.fromRGB(200, 185, 230)
-TorsoOptionBtn.TextColor3 = Theme.TextSub
-isTargetDropOpen = false
-local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-TweenService:Create(TargetDropdownContainer, tInfo, {Size = UDim2.new(1, -20, 0, 40)}):Play()
-TweenService:Create(DropArrowBtn, tInfo, {Rotation = 0}):Play()
-end)
-TorsoOptionBtn.MouseButton1Click:Connect(function()
-_G.aimbotTargetPart = "HumanoidRootPart"
-DropLabel.Text = "Target Part: Body"
-TorsoOptionBtn.TextColor3 = Color3.fromRGB(200, 185, 230)
-HeadOptionBtn.TextColor3 = Theme.TextSub
-isTargetDropOpen = false
-local tInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-TweenService:Create(TargetDropdownContainer, tInfo, {Size = UDim2.new(1, -20, 0, 40)}):Play()
-TweenService:Create(DropArrowBtn, tInfo, {Rotation = 0}):Play()
-end)
 local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
--- СБОР БЛИЖАЙШЕЙ ЧАСТИ ТЕЛА С ЭКРАНА
-local function getClosestTargetInFOV()
-local closestPart = nil
+RunService.RenderStepped:Connect(function()
+if not triggerBotToggle or not LocalPlayer.Character then return end
+local tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+if not tool then return end
+local mouseRay = Camera:ViewportPointToRay(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2, 0)
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {LocalPlayer.Character}
+raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
+if result and result.Instance and result.Instance.Parent then
+local model = result.Instance.Parent
+local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
+if humanoid and humanoid.Health > 0 then
+local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
+if targetPlayer and targetPlayer ~= LocalPlayer then
+if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
+return
+end
+pcall(function() tool:Activate() end)
+end
+end
+end
+end)
+local Smoothness = 0.25
+local function isVisible(targetPart)
+local character = LocalPlayer.Character
+if not character then return false end
+local raycastParams = RaycastParams.new()
+raycastParams.FilterDescendantsInstances = {character, targetPart.Parent}
+raycastParams.FilterType = Enum.RaycastFilterType.Exclude
+local origin = Camera.CFrame.Position
+local direction = targetPart.Position - origin
+local raycastResult = workspace:Raycast(origin, direction, raycastParams)
+return raycastResult == nil
+end
+local function getClosestPlayerInFOV()
+local closestPlayer = nil
 local shortestDistance = math.huge
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
-local myChar = LocalPlayer.Character
-for _, child in ipairs(workspace:GetChildren()) do
-if child:IsA("Model") and child ~= myChar then
-local targetPart = child:FindFirstChild(_G.aimbotTargetPart)
-if targetPart and targetPart:IsA("BasePart") then
-local targetPlayer = Players:GetPlayerFromCharacter(child) or Players:FindFirstChild(child.Name)
-if targetPlayer and LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
-continue
-end
-local pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
+if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("Head") then return nil end
+for _, player in ipairs(game.Players:GetPlayers()) do
+if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") and player.Character:FindFirstChildOfClass("Humanoid") and player.Character:FindFirstChildOfClass("Humanoid").Health > 0 then
+local pos, onScreen = Camera:WorldToViewportPoint(player.Character.Head.Position)
 if onScreen then
 local magnitude = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
 if magnitude < fovRadius and magnitude < shortestDistance then
-closestPart = targetPart
+if isVisible(player.Character.Head) then
+closestPlayer = player
 shortestDistance = magnitude
 end
 end
 end
 end
 end
-return closestPart
+return closestPlayer
 end
--- СВЕРХНАДЁЖНЫЙ ХУК МЕТАМЕТОДА ДЛЯ ОБХОДА ИГРОВОЙ БЛОКИРОВКИ КАМЕРЫ
-local hook
-hook = hookmetamethod(game, "__index", function(self, key)
--- Если игра или скрипт оружия опрашивает положение Камеры или направление Луча...
-if _G.aimbotToggle and (UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) or triggerBotToggle) then
-if self == Camera and (key == "CFrame" or key == "CoordinateFrame") then
-local targetPart = getClosestTargetInFOV()
-if targetPart then
--- Возвращаем игре модифицированный вектор направления прямо на голову/тело врага
-return CFrame.lookAt(Camera.CFrame.Position, targetPart.Position)
-end
-end
-end
-return hook(self, key)
-end)
--- Обновление круга FOV на каждом кадре
 RunService.RenderStepped:Connect(function()
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 fovCircle.Position = screenCenter
-fovCircle.Visible = _G.aimbotToggle
+local currentActiveTab = _G.currentTab or "Combat"
+fovCircle.Visible = _G.aimbotToggle and MainFrame.Visible and (currentActiveTab == "Combat")
+if _G.aimbotToggle and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+local target = getClosestPlayerInFOV()
+if target and target.Character and target.Character:FindFirstChild("Head") then
+local targetCFrame = CFrame.new(Camera.CFrame.Position, target.Character.Head.Position)
+Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
+end
+end
 end)
 -- ==========================================
 -- ⚙️ В К Л А Д К А  « S E T T I N G S »
