@@ -946,7 +946,7 @@ SliderLabel.Text = "FOV Limit: " .. fovRadius
 end
 end)
 local triggerBotToggle = false
-createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
+createHazeToggle("TriggerBot", Pages.Combat, function(state)
 triggerBotToggle = state
 end)
 RunService.RenderStepped:Connect(function()
@@ -1067,11 +1067,6 @@ createColorButton(Color3.fromRGB(138, 43, 226), "Purple")
 createColorButton(Color3.fromRGB(255, 45, 85), "Red")
 createColorButton(Color3.fromRGB(0, 235, 175), "Aqua")
 createColorButton(Color3.fromRGB(240, 170, 20), "Gold")
-
-local triggerBotToggle = false
-createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
-triggerBotToggle = state
-end)
 -- Старт скрипта
 task.spawn(function()
 showTab("Combat")
