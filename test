@@ -17,6 +17,43 @@ local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
+-- ТЕМАТИЗАЦИЯ И НАСТРОЙКА ЦВЕТОВ
+local Theme = {
+    Primary = Color3.fromRGB(138, 43, 226),     
+    Background = Color3.fromRGB(10, 8, 18),     
+    Sidebar = Color3.fromRGB(6, 5, 12),         
+    Card = Color3.fromRGB(18, 14, 28),          
+    Stroke = Color3.fromRGB(45, 35, 65),        
+    TextMain = Color3.fromRGB(245, 240, 255),   
+    TextSub = Color3.fromRGB(145, 130, 165)     
+}
+
+local ThemeObjects = {
+    Accents = {},     
+    Strokes = {},     
+}
+
+local function updateMenuTheme(newAccentColor)
+    Theme.Primary = newAccentColor
+    for _, obj in ipairs(ThemeObjects.Accents) do
+        if obj and obj.Parent then
+            if obj:IsA("Frame") or obj:IsA("TextButton") then
+                obj.BackgroundColor3 = newAccentColor
+            elseif obj:IsA("TextLabel") or obj:IsA("TextButton") then
+                obj.TextColor3 = newAccentColor
+            end
+        end
+    end
+    for _, stroke in ipairs(ThemeObjects.Strokes) do
+        if stroke and stroke.Parent then
+            stroke.Color = newAccentColor
+        end
+    end
+    if shared.nyxFovCircle then
+        shared.nyxFovCircle.Color = newAccentColor
+    end
+end
+
 -- Основа интерфейса
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "SimpleModMenu"
@@ -37,10 +74,11 @@ local function addStroke(object, color, thickness, transparency)
     stroke.Transparency = transparency or 0
     stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     stroke.Parent = object
+    return stroke
 end
 
 -- ==========================================
--- 🌌 ЗАГРУЗОЧНЫЙ ЭКРАН (ПРОЗРАЧНЫЙ)
+-- 🌌 ЗАГРУЗОЧНЫЙ ЭКРАН
 -- ==========================================
 local LoadingScreen = Instance.new("Frame")
 LoadingScreen.Name = "LoadingScreen"
@@ -65,48 +103,74 @@ BarBackground.Position = UDim2.new(0.5, -130, 0.5, 5)
 BarBackground.BackgroundColor3 = Color3.fromRGB(20, 15, 30)
 BarBackground.Parent = LoadingScreen
 addCorners(BarBackground, 4)
-addStroke(BarBackground, Color3.fromRGB(138, 43, 226), 1)
+addStroke(BarBackground, Theme.Primary, 1)
 
 local ProgressBar = Instance.new("Frame")
 ProgressBar.Size = UDim2.new(0, 0, 1, 0)
-ProgressBar.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+ProgressBar.BackgroundColor3 = Theme.Primary
 ProgressBar.Parent = BarBackground
 addCorners(ProgressBar, 4)
 
-local barTween = TweenService:Create(ProgressBar, TweenInfo.new(2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+local barTween = TweenService:Create(ProgressBar, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
     Size = UDim2.new(1, 0, 1, 0)
 })
 barTween:Play()
 barTween.Completed:Wait()
 
-task.wait(0.2)
+task.wait(0.1)
 
-local fadeTween = TweenService:Create(LoadingText, TweenInfo.new(0.4), {TextTransparency = 1, TextStrokeTransparency = 1})
-TweenService:Create(BarBackground, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
-TweenService:Create(ProgressBar, TweenInfo.new(0.4), {BackgroundTransparency = 1}):Play()
+local fadeTween = TweenService:Create(LoadingText, TweenInfo.new(0.3), {TextTransparency = 1, TextStrokeTransparency = 1})
+TweenService:Create(BarBackground, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
+TweenService:Create(ProgressBar, TweenInfo.new(0.3), {BackgroundTransparency = 1}):Play()
 local strokeObj = BarBackground:FindFirstChildOfClass("UIStroke")
-if strokeObj then TweenService:Create(strokeObj, TweenInfo.new(0.4), {Transparency = 1}):Play() end
+if strokeObj then TweenService:Create(strokeObj, TweenInfo.new(0.3), {Transparency = 1}):Play() end
 
 fadeTween:Play()
 fadeTween.Completed:Wait()
 LoadingScreen:Destroy()
 
 -- ==========================================
--- ГЛАВНОЕ ОКНО (МОДЕРНИЗИРОВАННЫЙ НЕОН)
+-- 👁️ КОМПАКТНАЯ ПОЛОСКА СО ЗНАЧКОМ (ВВЕРХУ ПО ЦЕНТРУ)
+-- ==========================================
+local InfoBarFrame = Instance.new("Frame")
+InfoBarFrame.Name = "NYX_InfoBar"
+InfoBarFrame.Size = UDim2.new(0, 44, 0, 32) 
+InfoBarFrame.AnchorPoint = Vector2.new(0.5, 0)
+InfoBarFrame.Position = UDim2.new(0.5, 0, 0, 10) 
+InfoBarFrame.BackgroundColor3 = Theme.Background
+addCorners(InfoBarFrame, 8)
+addStroke(InfoBarFrame, Color3.fromRGB(55, 42, 80), 1.2)
+InfoBarFrame.Parent = ScreenGui
+
+local EyeIcon = Instance.new("TextLabel")
+EyeIcon.Size = UDim2.new(1, 0, 1, 0) 
+EyeIcon.Position = UDim2.new(0, 0, 0, 0)
+EyeIcon.BackgroundTransparency = 1
+EyeIcon.Text = "👁️"
+EyeIcon.TextColor3 = Theme.Primary
+EyeIcon.Font = Enum.Font.GothamBold
+EyeIcon.TextSize = 16
+EyeIcon.TextXAlignment = Enum.TextXAlignment.Center
+EyeIcon.TextYAlignment = Enum.TextYAlignment.Center
+EyeIcon.Parent = InfoBarFrame
+table.insert(ThemeObjects.Accents, EyeIcon)
+
+-- ==========================================
+-- ГЛАВНОЕ ОКНО
 -- ==========================================
 local MainFrame = Instance.new("Frame")
 MainFrame.Name = "ModMenu"
 MainFrame.Parent = ScreenGui
-MainFrame.BackgroundColor3 = Color3.fromRGB(12, 9, 20)
+MainFrame.BackgroundColor3 = Theme.Background
 MainFrame.Position = UDim2.new(0.3, 0, 0.25, 0)
-MainFrame.Size = UDim2.new(0, 530, 0, 370)
+MainFrame.Size = UDim2.new(0, 550, 0, 390)
 MainFrame.Active = true
-addCorners(MainFrame, 12)
-addStroke(MainFrame, Color3.fromRGB(55, 38, 85), 1.2)
+MainFrame.ClipsDescendants = true
+addCorners(MainFrame, 14)
+addStroke(MainFrame, Color3.fromRGB(45, 38, 70), 1.2)
 
--- Плавное и стабильное кастомное перетаскивание (Замена старого Draggable)
 local dragToggle, dragStart, startPos
-local dragSpeed = 0.12
+local dragSpeed = 0.08
 
 local function updateInput(input)
     local delta = input.Position - dragStart
@@ -135,9 +199,9 @@ end)
 local Sidebar = Instance.new("Frame")
 Sidebar.Name = "Sidebar"
 Sidebar.Parent = MainFrame
-Sidebar.BackgroundColor3 = Color3.fromRGB(8, 6, 14)
-Sidebar.Size = UDim2.new(0, 145, 1, 0)
-addCorners(Sidebar, 12)
+Sidebar.BackgroundColor3 = Theme.Sidebar
+Sidebar.Size = UDim2.new(0, 155, 1, 0)
+addCorners(Sidebar, 14)
 
 local FixFrame = Instance.new("Frame")
 FixFrame.Size = UDim2.new(0, 15, 1, 0)
@@ -146,7 +210,7 @@ FixFrame.BackgroundColor3 = Sidebar.BackgroundColor3
 FixFrame.BorderSizePixel = 0
 FixFrame.Parent = Sidebar
 
--- ЛОГОТИП И НАЗВАНИЕ В ОДНОЙ СТРОКЕ
+-- ЛОГОТИП
 local LogoContainer = Instance.new("Frame")
 LogoContainer.Size = UDim2.new(1, 0, 0, 55)
 LogoContainer.BackgroundTransparency = 1
@@ -155,12 +219,12 @@ LogoContainer.Parent = Sidebar
 local MenuIcon = Instance.new("ImageLabel")
 MenuIcon.Parent = LogoContainer
 MenuIcon.BackgroundTransparency = 1
-MenuIcon.Position = UDim2.new(0, 14, 0, 16) 
+MenuIcon.Position = UDim2.new(0, 16, 0, 16) 
 MenuIcon.Size = UDim2.new(0, 22, 0, 22)    
 MenuIcon.Image = "rbxasset://textures/DevConsole/scythe.png"
-MenuIcon.ImageColor3 = Color3.fromRGB(155, 85, 255)
+MenuIcon.ImageColor3 = Theme.Primary
+table.insert(ThemeObjects.Accents, MenuIcon)
 
--- Безопасный цикл покачивания косы
 task.spawn(function()
     while true do
         if MainFrame and MenuIcon and MainFrame.Parent then
@@ -175,20 +239,21 @@ end)
 local Title = Instance.new("TextLabel")
 Title.Parent = LogoContainer
 Title.BackgroundTransparency = 1
-Title.Position = UDim2.new(0, 44, 0, 2) 
-Title.Size = UDim2.new(1, -44, 1, 0)
-Title.Text = "NYX Hub"
-Title.TextColor3 = Color3.fromRGB(245, 240, 255)
+Title.Position = UDim2.new(0, 48, 0, 2) 
+Title.Size = UDim2.new(1, -48, 1, 0)
+Title.Text = "NYX HUB"
+Title.TextColor3 = Theme.TextMain
 Title.TextSize = 16
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.TextYAlignment = Enum.TextYAlignment.Center
 
--- ПРОФИЛЬ ИГРОКА ВНИЗУ СЛЕВА
+-- ПРОФИЛЬ ИГРОКА СЛЕВА
 local ProfileFrame = Instance.new("Frame")
 ProfileFrame.Size = UDim2.new(1, -16, 0, 48)
 ProfileFrame.Position = UDim2.new(0, 8, 1, -58)
-ProfileFrame.BackgroundColor3 = Color3.fromRGB(20, 14, 32)
-ProfileFrame.BackgroundTransparency = 0.3
+ProfileFrame.BackgroundColor3 = Theme.Card
+ProfileFrame.BackgroundTransparency = 0.2
 ProfileFrame.Parent = Sidebar
 addCorners(ProfileFrame, 8)
 addStroke(ProfileFrame, Color3.fromRGB(45, 32, 70), 1, 0.4)
@@ -214,74 +279,68 @@ PlayerName.Size = UDim2.new(1, -50, 0, 15)
 PlayerName.Position = UDim2.new(0, 46, 0, 9)
 PlayerName.BackgroundTransparency = 1
 PlayerName.Text = LocalPlayer.DisplayName
-PlayerName.TextColor3 = Color3.fromRGB(240, 230, 255)
+PlayerName.TextColor3 = Theme.TextMain
 PlayerName.Font = Enum.Font.GothamBold
 PlayerName.TextSize = 11
 PlayerName.TextXAlignment = Enum.TextXAlignment.Left
+PlayerName.TextYAlignment = Enum.TextYAlignment.Center
 PlayerName.Parent = ProfileFrame
-
 local PlayerTag = Instance.new("TextLabel")
 PlayerTag.Size = UDim2.new(1, -50, 0, 12)
 PlayerTag.Position = UDim2.new(0, 46, 0, 24)
 PlayerTag.BackgroundTransparency = 1
 PlayerTag.Text = "@" .. LocalPlayer.Name
-PlayerTag.TextColor3 = Color3.fromRGB(140, 125, 160)
+PlayerTag.TextColor3 = Theme.TextSub
 PlayerTag.Font = Enum.Font.GothamSemibold
 PlayerTag.TextSize = 9
 PlayerTag.TextXAlignment = Enum.TextXAlignment.Left
+PlayerTag.TextYAlignment = Enum.TextYAlignment.Center
 PlayerTag.Parent = ProfileFrame
-
 -- ГЛАВНЫЙ КОНТЕЙНЕР ДЛЯ ВКЛАДОК
 local Container = Instance.new("Frame")
 Container.Name = "Container"
 Container.Parent = MainFrame
 Container.BackgroundTransparency = 1
-Container.Position = UDim2.new(0, 160, 0, 20)
-Container.Size = UDim2.new(1, -175, 1, -40)
-
+Container.Position = UDim2.new(0, 170, 0, 20)
+Container.Size = UDim2.new(1, -185, 1, -40)
 local Pages = {}
-
 local function createTabFrame(name)
-    local page = Instance.new("ScrollingFrame")
-    page.Name = name .. "Page"
-    page.Size = UDim2.new(1, 0, 1, 0)
-    page.BackgroundTransparency = 1
-    page.Visible = false
-    page.ScrollBarThickness = 3
-    page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
-    page.CanvasSize = UDim2.new(0, 0, 0, 0)
-    page.Parent = Container
-    
-    local layout = Instance.new("UIListLayout")
-    layout.SortOrder = Enum.SortOrder.LayoutOrder
-    layout.Padding = UDim.new(0, 6)
-    layout.Parent = page
-    
-    Pages[name] = page
+local page = Instance.new("ScrollingFrame")
+page.Name = name .. "Page"
+page.Size = UDim2.new(1, 0, 1, 0)
+page.BackgroundTransparency = 1
+page.Visible = false
+page.ScrollBarThickness = 2
+page.ScrollBarImageColor3 = Color3.fromRGB(75, 50, 120)
+page.CanvasSize = UDim2.new(0, 0, 0, 0)
+page.Parent = Container
+local layout = Instance.new("UIListLayout")
+layout.SortOrder = Enum.SortOrder.LayoutOrder
+layout.Padding = UDim.new(0, 8)
+layout.Parent = page
+Pages[name] = page
 end
-
 createTabFrame("Combat")
 createTabFrame("Visuals")
 createTabFrame("World")
-
+createTabFrame("Settings")
 -- СИСТЕМА ПЕРЕКЛЮЧЕНИЯ ВКЛАДОК
 _G.currentTab = "Combat"
-
 local function showTab(tabName)
-    _G.currentTab = tabName
-    for name, page in pairs(Pages) do
-        page.Visible = (name == tabName)
-    end
-    for _, btn in ipairs(Sidebar:GetChildren()) do
-        if btn:IsA("TextButton") then
-            if btn.Name == tabName .. "TabBtn" then
-                TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(42, 26, 75), BackgroundTransparency = 0}):Play()
+_G.currentTab = tabName
+for name, page in pairs(Pages) do
+page.Visible = (name == tabName)
+end
+for _, btn in ipairs(Sidebar:GetChildren()) do
+if btn:IsA("TextButton") then
+if btn.Name == tabName .. "TabBtn" then
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(35, 25, 55), BackgroundTransparency = 0}):Play()
 btn.TextColor3 = Color3.fromRGB(255, 255, 255)
 local bStroke = btn:FindFirstChildOfClass("UIStroke")
-if bStroke then bStroke.Transparency = 0 end
+if bStroke then bStroke.Transparency = 0.3 end
 else
-TweenService:Create(btn, TweenInfo.new(0.25), {BackgroundColor3 = Color3.fromRGB(0,0,0), BackgroundTransparency = 1}):Play()
-btn.TextColor3 = Color3.fromRGB(145, 130, 165)
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(0,0,0), BackgroundTransparency = 1}):Play()
+btn.TextColor3 = Theme.TextSub
 local bStroke = btn:FindFirstChildOfClass("UIStroke")
 if bStroke then bStroke.Transparency = 1 end
 end
@@ -291,30 +350,28 @@ if shared.nyxFovCircle then
 shared.nyxFovCircle.Visible = (tabName == "Combat") and _G.aimbotToggle and MainFrame.Visible
 end
 end
--- ЛОГИКА СЖАТИЯ МЕНЮ В ПРАВЫЙ НИЖНИЙ УГОЛ
+-- ЛОГИКА СВОРАЧИВАНИЯ МЕНЮ В ИНФО-ПОЛОСКУ
 local isMenuOpen = true
 local isTweening = false
-local normalSize = UDim2.new(0, 530, 0, 370)
-local normalPos = UDim2.new(0.3, 0, 0.25, 0)
+local lastSavedPos = UDim2.new(0.3, 0, 0.25, 0)
+local normalSize = UDim2.new(0, 550, 0, 390)
 local function toggleMenuVisuals(open)
 if isTweening then return end
 isTweening = true
-local tInfo = TweenInfo.new(0.35, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+local tInfo = TweenInfo.new(0.4, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 if open then
 MainFrame.Visible = true
 if shared.nyxFovCircle then shared.nyxFovCircle.Visible = (_G.currentTab == "Combat") and _G.aimbotToggle end
-TweenService:Create(MainFrame, tInfo, {Size = normalSize, Position = normalPos, BackgroundTransparency = 0}):Play()
-TweenService:Create(Sidebar, tInfo, {BackgroundTransparency = 0}):Play()
-TweenService:Create(FixFrame, tInfo, {BackgroundTransparency = 0}):Play()
-task.wait(0.35)
+TweenService:Create(MainFrame, tInfo, {Size = normalSize, Position = lastSavedPos, BackgroundTransparency = 0}):Play()
+task.wait(0.4)
 isMenuOpen = true
 else
 if shared.nyxFovCircle then shared.nyxFovCircle.Visible = false end
-local cornerPos = UDim2.new(1, -10, 1, -10)
-TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = cornerPos, BackgroundTransparency = 1}):Play()
-TweenService:Create(Sidebar, tInfo, {BackgroundTransparency = 1}):Play()
-TweenService:Create(FixFrame, tInfo, {BackgroundTransparency = 1}):Play()
-task.wait(0.35)
+lastSavedPos = MainFrame.Position
+local targetPos = InfoBarFrame.Position
+local collapseTween = TweenService:Create(MainFrame, tInfo, {Size = UDim2.new(0, 0, 0, 0), Position = targetPos, BackgroundTransparency = 1})
+collapseTween:Play()
+collapseTween.Completed:Wait()
 MainFrame.Visible = false
 isMenuOpen = false
 end
@@ -332,24 +389,25 @@ btn.Name = name .. "TabBtn"
 btn.Parent = Sidebar
 btn.Size = UDim2.new(1, -16, 0, 36)
 btn.Position = UDim2.new(0, 8, 0, 65 + (tabCount * 42))
-btn.BackgroundColor3 = Color3.fromRGB(42, 26, 75)
+btn.BackgroundColor3 = Color3.fromRGB(35, 25, 55)
 btn.BackgroundTransparency = 1
 btn.Text = "  " .. iconText .. "   " .. name
-btn.TextColor3 = Color3.fromRGB(145, 130, 165)
+btn.TextColor3 = Theme.TextSub
 btn.Font = Enum.Font.GothamBold
 btn.TextSize = 12
 btn.TextXAlignment = Enum.TextXAlignment.Left
+btn.TextYAlignment = Enum.TextYAlignment.Center
 addCorners(btn, 6)
-addStroke(btn, Color3.fromRGB(85, 55, 145), 1, 1)
--- Эффекты наведения мыши (Hover)
+local bStroke = addStroke(btn, Theme.Primary, 1, 1)
+table.insert(ThemeObjects.Strokes, bStroke)
 btn.MouseEnter:Connect(function()
 if _G.currentTab ~= name then
-TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(60, 40, 100), TextColor3 = Color3.fromRGB(200, 190, 220)}):Play()
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 0.8, BackgroundColor3 = Color3.fromRGB(50, 35, 80), TextColor3 = Color3.fromRGB(220, 210, 245)}):Play()
 end
 end)
 btn.MouseLeave:Connect(function()
 if _G.currentTab ~= name then
-TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(145, 130, 165)}):Play()
+TweenService:Create(btn, TweenInfo.new(0.2), {BackgroundTransparency = 1, TextColor3 = Theme.TextSub}):Play()
 end
 end)
 btn.MouseButton1Click:Connect(function() showTab(name) end)
@@ -358,54 +416,60 @@ end
 createTabButton("Combat", "⚔")
 createTabButton("Visuals", "👁")
 createTabButton("World", "🌐")
--- СОЗДАНИЕ СВИТЧЕЙ С КРАСИВЫМ ХОВЕРОМ
+createTabButton("Settings", "⚙")
+-- СВИТЧИ
 local function createHazeToggle(text, tabContainer, callback)
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(1, 0, 0, 42)
-frame.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
-frame.BackgroundTransparency = 0.6
+frame.Size = UDim2.new(1, -4, 0, 44)
+frame.BackgroundColor3 = Theme.Card
+frame.BackgroundTransparency = 0.4
 frame.Parent = tabContainer
-addCorners(frame, 6)
-addStroke(frame, Color3.fromRGB(45, 35, 65), 1, 0.5)
+addCorners(frame, 8)
+addStroke(frame, Theme.Stroke, 1, 0.4)
 local label = Instance.new("TextLabel")
 label.Size = UDim2.new(1, -60, 1, 0)
-label.Position = UDim2.new(0, 10, 0, 0)
+label.Position = UDim2.new(0, 12, 0, 0)
 label.BackgroundTransparency = 1
 label.Text = text
-label.TextColor3 = Color3.fromRGB(230, 220, 245)
+label.TextColor3 = Theme.TextMain
 label.Font = Enum.Font.GothamSemibold
 label.TextSize = 13
 label.TextXAlignment = Enum.TextXAlignment.Left
+label.TextYAlignment = Enum.TextYAlignment.Center
 label.Parent = frame
 local toggleBg = Instance.new("TextButton")
-toggleBg.Size = UDim2.new(0, 38, 0, 20)
-toggleBg.Position = UDim2.new(1, -48, 0.5, -10)
-toggleBg.BackgroundColor3 = Color3.fromRGB(40, 30, 55)
+toggleBg.Size = UDim2.new(0, 40, 0, 22)
+toggleBg.Position = UDim2.new(1, -52, 0.5, -11)
+toggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 toggleBg.Text = ""
 toggleBg.Parent = frame
-addCorners(toggleBg, 10)
-addStroke(toggleBg, Color3.fromRGB(65, 50, 90), 1)
+addCorners(toggleBg, 11)
+addStroke(toggleBg, Color3.fromRGB(55, 45, 75), 1)
 local ball = Instance.new("Frame")
-ball.Size = UDim2.new(0, 14, 0, 14)
-ball.Position = UDim2.new(0, 3, 0.5, -7)
-ball.BackgroundColor3 = Color3.fromRGB(160, 145, 180)
+ball.Size = UDim2.new(0, 16, 0, 16)
+ball.Position = UDim2.new(0, 3, 0.5, -8)
+ball.BackgroundColor3 = Color3.fromRGB(150, 135, 175)
 ball.Parent = toggleBg
-addCorners(ball, 7)
+addCorners(ball, 8)
 local state = false
 frame.MouseEnter:Connect(function()
-TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.3, BackgroundColor3 = Color3.fromRGB(30, 22, 48)}):Play()
+TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.1, BackgroundColor3 = Color3.fromRGB(24, 18, 38)}):Play()
 end)
 frame.MouseLeave:Connect(function()
-TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.6, BackgroundColor3 = Color3.fromRGB(20, 16, 32)}):Play()
+TweenService:Create(frame, TweenInfo.new(0.2), {BackgroundTransparency = 0.4, BackgroundColor3 = Theme.Card}):Play()
 end)
 toggleBg.MouseButton1Click:Connect(function()
 state = not state
 if state then
-TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(138, 43, 226)}):Play()
-TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
+TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(1, -19, 0.5, -8), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+table.insert(ThemeObjects.Accents, toggleBg)
 else
-TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 55)}):Play()
-TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
+TweenService:Create(toggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
+TweenService:Create(ball, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -8), BackgroundColor3 = Color3.fromRGB(150, 135, 175)}):Play()
+for i, v in ipairs(ThemeObjects.Accents) do
+if v == toggleBg then table.remove(ThemeObjects.Accents, i) break end
+end
 end
 callback(state)
 end)
@@ -420,7 +484,7 @@ end
 return "[Hands]"
 end
 -- ==========================================
--- В К Л А Д К А  « V I S U A L S » (👁)
+-- В К Л А Д К А  « V I S U A L S »
 -- ==========================================
 local espToggle = false
 local espConnections = {}
@@ -435,7 +499,7 @@ task.wait(0.1)
 if char:FindFirstChild("ESPHighlight") then char.ESPHighlight:Destroy() end
 local highlight = Instance.new("Highlight")
 highlight.Name = "ESPHighlight"
-highlight.FillColor = Color3.fromRGB(138, 43, 226)
+highlight.FillColor = Theme.Primary
 highlight.FillTransparency = 0.6
 highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
 highlight.Parent = char
@@ -455,6 +519,7 @@ nameLabel.Text = plr.Name .. " [0m]"
 nameLabel.TextColor3 = Color3.fromRGB(235, 215, 255)
 nameLabel.TextSize = 12
 nameLabel.Font = Enum.Font.GothamBold
+nameLabel.TextYAlignment = Enum.TextYAlignment.Center
 nameLabel.Parent = billboard
 local invLabel = Instance.new("TextLabel")
 invLabel.Position = UDim2.new(0, 0, 0, 18)
@@ -464,6 +529,7 @@ invLabel.Text = getEquippedItem(plr)
 invLabel.TextColor3 = Color3.fromRGB(175, 160, 195)
 invLabel.TextSize = 10
 invLabel.Font = Enum.Font.GothamSemibold
+invLabel.TextYAlignment = Enum.TextYAlignment.Center
 invLabel.Parent = billboard
 local updateConn
 updateConn = RunService.RenderStepped:Connect(function()
@@ -502,40 +568,41 @@ local legitHeadToggle = false
 _G.showThroughWalls = false
 local headPlayerConns = {}
 local DropdownContainer = Instance.new("Frame")
-DropdownContainer.Size = UDim2.new(1, 0, 0, 42)
-DropdownContainer.BackgroundColor3 = Color3.fromRGB(20, 16, 32)
-DropdownContainer.BackgroundTransparency = 0.6
+DropdownContainer.Size = UDim2.new(1, -4, 0, 42)
+DropdownContainer.BackgroundColor3 = Theme.Card
+DropdownContainer.BackgroundTransparency = 0.4
 DropdownContainer.ClipsDescendants = true
 DropdownContainer.Parent = Pages.Visuals
-addCorners(DropdownContainer, 6)
-addStroke(DropdownContainer, Color3.fromRGB(45, 35, 65), 1, 0.5)
+addCorners(DropdownContainer, 8)
+addStroke(DropdownContainer, Theme.Stroke, 1, 0.5)
 local MainToggleFrame = Instance.new("Frame")
 MainToggleFrame.Size = UDim2.new(1, 0, 0, 42)
 MainToggleFrame.BackgroundTransparency = 1
 MainToggleFrame.Parent = DropdownContainer
 local MainLabel = Instance.new("TextLabel")
 MainLabel.Size = UDim2.new(1, -90, 1, 0)
-MainLabel.Position = UDim2.new(0, 10, 0, 0)
+MainLabel.Position = UDim2.new(0, 12, 0, 0)
 MainLabel.BackgroundTransparency = 1
 MainLabel.Text = "Legit Head ESP"
-MainLabel.TextColor3 = Color3.fromRGB(230, 220, 245)
+MainLabel.TextColor3 = Theme.TextMain
 MainLabel.Font = Enum.Font.GothamSemibold
 MainLabel.TextSize = 13
 MainLabel.TextXAlignment = Enum.TextXAlignment.Left
+MainLabel.TextYAlignment = Enum.TextYAlignment.Center
 MainLabel.Parent = MainToggleFrame
 local ArrowBtn = Instance.new("TextButton")
 ArrowBtn.Size = UDim2.new(0, 24, 0, 24)
 ArrowBtn.Position = UDim2.new(1, -78, 0.5, -12)
 ArrowBtn.BackgroundTransparency = 1
 ArrowBtn.Text = "▼"
-ArrowBtn.TextColor3 = Color3.fromRGB(150, 135, 170)
+ArrowBtn.TextColor3 = Theme.TextSub
 ArrowBtn.Font = Enum.Font.GothamBold
 ArrowBtn.TextSize = 12
 ArrowBtn.Parent = MainToggleFrame
 local MainToggleBg = Instance.new("TextButton")
 MainToggleBg.Size = UDim2.new(0, 38, 0, 20)
 MainToggleBg.Position = UDim2.new(1, -48, 0.5, -10)
-MainToggleBg.BackgroundColor3 = Color3.fromRGB(40, 30, 55)
+MainToggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 MainToggleBg.Text = ""
 MainToggleBg.Parent = MainToggleFrame
 addCorners(MainToggleBg, 10)
@@ -552,18 +619,19 @@ SubToggleFrame.BackgroundTransparency = 1
 SubToggleFrame.Parent = DropdownContainer
 local SubLabel = Instance.new("TextLabel")
 SubLabel.Size = UDim2.new(1, -60, 1, 0)
-SubLabel.Position = UDim2.new(0, 20, 0, 0)
+SubLabel.Position = UDim2.new(0, 24, 0, 0)
 SubLabel.BackgroundTransparency = 1
 SubLabel.Text = "Show Through Walls"
-SubLabel.TextColor3 = Color3.fromRGB(180, 170, 195)
+SubLabel.TextColor3 = Theme.TextSub
 SubLabel.Font = Enum.Font.GothamSemibold
 SubLabel.TextSize = 12
 SubLabel.TextXAlignment = Enum.TextXAlignment.Left
+SubLabel.TextYAlignment = Enum.TextYAlignment.Center
 SubLabel.Parent = SubToggleFrame
 local SubToggleBg = Instance.new("TextButton")
 SubToggleBg.Size = UDim2.new(0, 34, 0, 16)
 SubToggleBg.Position = UDim2.new(1, -48, 0.5, -8)
-SubToggleBg.BackgroundColor3 = Color3.fromRGB(40, 30, 50)
+SubToggleBg.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 SubToggleBg.Text = ""
 SubToggleBg.Parent = SubToggleFrame
 addCorners(SubToggleBg, 8)
@@ -618,40 +686,40 @@ end
 end
 end
 end
-local isDropdownOpen = false
+isDropdownOpen = false
 ArrowBtn.MouseButton1Click:Connect(function()
 if isTweening then return end
 isDropdownOpen = not isDropdownOpen
 local tInfo = TweenInfo.new(0.25, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 if isDropdownOpen then
-TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, 0, 0, 82)}):Play()
+TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, -4, 0, 82)}):Play()
 TweenService:Create(ArrowBtn, tInfo, {Rotation = 180}):Play()
 else
-TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, 0, 0, 42)}):Play()
+TweenService:Create(DropdownContainer, tInfo, {Size = UDim2.new(1, -4, 0, 42)}):Play()
 TweenService:Create(ArrowBtn, tInfo, {Rotation = 0}):Play()
 end
 end)
 MainToggleBg.MouseButton1Click:Connect(function()
 legitHeadToggle = not legitHeadToggle
 if legitHeadToggle then
-TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(138, 43, 226)}):Play()
+TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
 TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -17, 0.5, -7), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 for _, plr in ipairs(game.Players:GetPlayers()) do createLegitHeadESP(plr) end
 local pAdded = game.Players.PlayerAdded:Connect(createLegitHeadESP)
 table.insert(headPlayerConns, pAdded)
 else
-TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 55)}):Play()
-TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)}):Play()
+TweenService:Create(MainToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
+TweenService:Create(MainBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -7), BackgroundColor3 = Color3.fromRGB(160, 145, 180)})
 clearLegitHeadESP()
 end
 end)
 SubToggleBg.MouseButton1Click:Connect(function()
 _G.showThroughWalls = not _G.showThroughWalls
 if _G.showThroughWalls then
-TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(138, 43, 226)}):Play()
+TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Theme.Primary}):Play()
 TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(1, -15, 0.5, -5), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 else
-TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 30, 50)}):Play()
+TweenService:Create(SubToggleBg, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(30, 24, 45)}):Play()
 TweenService:Create(SubBall, TweenInfo.new(0.2), {Position = UDim2.new(0, 3, 0.5, -5), BackgroundColor3 = Color3.fromRGB(140, 130, 155)}):Play()
 end
 updateAllHeads()
@@ -667,7 +735,7 @@ if obj.Name ~= "SupplyCrate" then return end
 if not obj:FindFirstChild("LootHighlight") then
 local highlight = Instance.new("Highlight")
 highlight.Name = "LootHighlight"
-highlight.FillColor = Color3.fromRGB(138, 43, 226)
+highlight.FillColor = Theme.Primary
 highlight.FillTransparency = 0.5
 highlight.OutlineColor = Color3.fromRGB(200, 150, 255)
 highlight.DepthMode = Enum.HighlightDepthMode.AlwaysOnTop
@@ -749,7 +817,7 @@ laserPart.Name = "NYX_BulletLaser"
 laserPart.Anchored = true
 laserPart.CanCollide = false
 laserPart.Material = Enum.Material.Neon
-laserPart.Color = Color3.fromRGB(160, 60, 255)
+laserPart.Color = Theme.Primary
 laserPart.Size = Vector3.new(0.08, 0.08, distance)
 laserPart.CFrame = CFrame.new(startPos, endPos) * CFrame.new(0, 0, -distance / 2)
 laserPart.Parent = workspace
@@ -779,7 +847,7 @@ end
 end)
 end
 end
-createHazeToggle("Bullet Tracers (Purple)", Pages.Visuals, function(state)
+createHazeToggle("Bullet Tracers (Theme Accent)", Pages.Visuals, function(state)
 bulletTracersToggle = state
 if bulletTracersToggle then
 trackWeaponFire()
@@ -820,7 +888,7 @@ end
 end
 end)
 -- ==========================================
--- В К Л А Д К А  « C O M B A T » (⚔️)
+-- В К Л А Д К А  « C O M B A T »
 -- ==========================================
 _G.aimbotToggle = false
 createHazeToggle("Aimbot Master", Pages.Combat, function(state)
@@ -831,25 +899,27 @@ SliderLabel.Parent = Pages.Combat
 SliderLabel.BackgroundTransparency = 1
 SliderLabel.Size = UDim2.new(1, 0, 0, 20)
 SliderLabel.Font = Enum.Font.GothamSemibold
-SliderLabel.TextColor3 = Color3.fromRGB(180, 165, 200)
+SliderLabel.TextColor3 = Theme.TextSub
 SliderLabel.TextSize = 12
 SliderLabel.TextXAlignment = Enum.TextXAlignment.Left
+SliderLabel.TextYAlignment = Enum.TextYAlignment.Center
 local SliderFrame = Instance.new("Frame")
 SliderFrame.Parent = Pages.Combat
-SliderFrame.BackgroundColor3 = Color3.fromRGB(40, 30, 60)
+SliderFrame.BackgroundColor3 = Color3.fromRGB(30, 24, 45)
 SliderFrame.Size = UDim2.new(1, -20, 0, 8)
 addCorners(SliderFrame, 4)
 local SliderButton = Instance.new("TextButton")
 SliderButton.Parent = SliderFrame
-SliderButton.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
+SliderButton.BackgroundColor3 = Theme.Primary
 SliderButton.Size = UDim2.new(0, 14, 0, 14)
 SliderButton.Position = UDim2.new(0.3, -7, 0.5, -7)
 SliderButton.Text = ""
 addCorners(SliderButton, 7)
+table.insert(ThemeObjects.Accents, SliderButton)
 local fovRadius = 100
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
-fovCircle.Color = Color3.fromRGB(138, 43, 226)
+fovCircle.Color = Theme.Primary
 fovCircle.Thickness = 1.2
 fovCircle.NumSides = 64
 fovCircle.Radius = fovRadius
@@ -875,9 +945,6 @@ fovCircle.Radius = fovRadius
 SliderLabel.Text = "FOV Limit: " .. fovRadius
 end
 end)
--- ==========================================
--- ИСПРАВЛЕННЫЙ И ОПТИМАЛЬНЫЙ ТРИГГЕРБОТ
--- ==========================================
 local triggerBotToggle = false
 createHazeToggle("TriggerBot (Auto Shoot)", Pages.Combat, function(state)
 triggerBotToggle = state
@@ -893,25 +960,18 @@ raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 local result = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * 1000, raycastParams)
 if result and result.Instance and result.Instance.Parent then
 local model = result.Instance.Parent
--- Поиск Humanoid для работы со здоровьем и подтверждения живого игрока
 local humanoid = model:FindFirstChildOfClass("Humanoid") or model.Parent:FindFirstChildOfClass("Humanoid")
 if humanoid and humanoid.Health > 0 then
--- Получаем объект игрока из модели (по его нику в workspace)
 local targetPlayer = game.Players:GetPlayerFromCharacter(humanoid.Parent)
 if targetPlayer and targetPlayer ~= LocalPlayer then
--- Проверка на команду (Team Check)
 if LocalPlayer.Team and targetPlayer.Team and LocalPlayer.Team == targetPlayer.Team then
 return
 end
--- Совершаем выстрел
-pcall(function()
-tool:Activate()
-end)
+pcall(function() tool:Activate() end)
 end
 end
 end
 end)
--- Системный расчет наводки аимбота
 local Smoothness = 0.25
 local function isVisible(targetPart)
 local character = LocalPlayer.Character
@@ -945,7 +1005,6 @@ end
 end
 return closestPlayer
 end
--- Потоковый рендер FOV круга и зажатия Left Control
 RunService.RenderStepped:Connect(function()
 local screenCenter = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 fovCircle.Position = screenCenter
@@ -959,6 +1018,55 @@ Camera.CFrame = Camera.CFrame:Lerp(targetCFrame, Smoothness)
 end
 end
 end)
+-- ==========================================
+-- ⚙️ В К Л А Д К А  « S E T T I N G S »
+-- ==========================================
+local SettingsLabel = Instance.new("TextLabel")
+SettingsLabel.Size = UDim2.new(1, 0, 0, 25)
+SettingsLabel.BackgroundTransparency = 1
+SettingsLabel.Text = "Menu Theme Customization"
+SettingsLabel.TextColor3 = Theme.TextMain
+SettingsLabel.Font = Enum.Font.GothamBold
+SettingsLabel.TextSize = 14
+SettingsLabel.TextXAlignment = Enum.TextXAlignment.Left
+SettingsLabel.TextYAlignment = Enum.TextYAlignment.Center
+SettingsLabel.Parent = Pages.Settings
+local ColorsContainer = Instance.new("Frame")
+ColorsContainer.Size = UDim2.new(1, -4, 0, 70)
+ColorsContainer.BackgroundColor3 = Theme.Card
+ColorsContainer.BackgroundTransparency = 0.4
+ColorsContainer.Parent = Pages.Settings
+addCorners(ColorsContainer, 8)
+addStroke(ColorsContainer, Theme.Stroke, 1, 0.4)
+local ColorLayout = Instance.new("UIListLayout")
+ColorLayout.FillDirection = Enum.FillDirection.Horizontal
+ColorLayout.HorizontalAlignment = Enum.HorizontalAlignment.Center
+ColorLayout.VerticalAlignment = Enum.VerticalAlignment.Center
+ColorLayout.Padding = UDim.new(0, 16)
+ColorLayout.Parent = ColorsContainer
+local function createColorButton(color, name)
+local btn = Instance.new("TextButton")
+btn.Size = UDim2.new(0, 36, 0, 36)
+btn.BackgroundColor3 = color
+btn.Text = ""
+btn.Parent = ColorsContainer
+addCorners(btn, 18)
+local stroke = addStroke(btn, Color3.fromRGB(255, 255, 255), 1.5, 1)
+btn.MouseButton1Click:Connect(function()
+for _, child in ipairs(ColorsContainer:GetChildren()) do
+if child:IsA("TextButton") and child:FindFirstChildOfClass("UIStroke") then
+child:FindFirstChildOfClass("UIStroke").Transparency = 1
+end
+end
+stroke.Transparency = 0
+updateMenuTheme(color)
+end)
+if name == "Purple" then stroke.Transparency = 0 end
+end
+createColorButton(Color3.fromRGB(138, 43, 226), "Purple")
+createColorButton(Color3.fromRGB(255, 45, 85), "Red")
+createColorButton(Color3.fromRGB(0, 235, 175), "Aqua")
+createColorButton(Color3.fromRGB(240, 170, 20), "Gold")
 -- Старт скрипта
 task.spawn(function()
 showTab("Combat")
