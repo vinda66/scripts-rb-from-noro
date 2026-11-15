@@ -4,13 +4,13 @@ local TweenService = game:GetService("TweenService")
 
 local PlayerGui = Players.LocalPlayer:WaitForChild("PlayerGui")
 
-local oldGui = PlayerGui:FindFirstChild("DF")
+local oldGui = PlayerGui:FindFirstChild("Dofamin")
 if oldGui then
     oldGui:Destroy()
 end
 
 local Gui = Instance.new("ScreenGui")
-Gui.Name = "DF"
+Gui.Name = "Dofamin"
 Gui.ResetOnSpawn = false
 Gui.Parent = PlayerGui
 
@@ -20,6 +20,7 @@ frame.Size = UDim2.new(0, 650, 0, 400)
 frame.Position = UDim2.new(0.5, -325, 0.5, -200)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 frame.BorderSizePixel = 0
+frame.ClipsDescendants = true
 frame.Parent = Gui
 
 local frameCorner = Instance.new("UICorner")
@@ -36,7 +37,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 35)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.Text = "Dofamin"
+title.Text = "   Dofamin"
 title.TextColor3 = Color3.fromRGB(240, 240, 240)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 18
@@ -148,15 +149,14 @@ local function selectTab(activePage, activeBtn)
     
     local tabAnim = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
     
-    TweenService:Create(tabMainBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(35, 35, 42)}):Play()
-    TweenService:Create(tabVisualBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(35, 35, 42)}):Play()
-    TweenService:Create(tabSettingsBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(35, 35, 42)}):Play()
+    TweenService:Create(tabMainBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(35, 35, 42), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
+    TweenService:Create(tabVisualBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(35, 35, 42), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
+    TweenService:Create(tabSettingsBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(35, 35, 42), TextColor3 = Color3.fromRGB(200, 200, 200)}):Play()
     
     activePage.Visible = true
-    TweenService:Create(activeBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(65, 65, 80)}):Play()
+    TweenService:Create(activeBtn, tabAnim, {BackgroundColor3 = Color3.fromRGB(65, 65, 80), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
 end
 
--- Восстановленные обработчики кликов по вкладкам
 tabMainBtn.MouseButton1Click:Connect(function()
     selectTab(pageMain, tabMainBtn)
 end)
@@ -297,36 +297,58 @@ local function createToggle(parentPage, text, posX, posY, callback)
     btn.AutoButtonColor = false
     btn.Parent = parentPage
 
-local corner = Instance.new("UICorner")
-corner.CornerRadius = UDim.new(0, 8)
-corner.Parent = btn
-local stroke = Instance.new("UIStroke")
-stroke.Color = Color3.fromRGB(70, 70, 85)
-stroke.Thickness = 1
-stroke.Parent = btn
-local enabled = false
-local animInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-btn.MouseEnter:Connect(function()
-if not enabled then
-TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(52, 52, 62)}):Play()
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 8)
+    corner.Parent = btn
+
+    local stroke = Instance.new("UIStroke")
+    stroke.Color = Color3.fromRGB(70, 70, 85)
+    stroke.Thickness = 1
+    stroke.Parent = btn
+
+    local enabled = false
+    local animInfo = TweenInfo.new(0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
+    btn.MouseEnter:Connect(function()
+        if not enabled then
+            TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(52, 52, 62)}):Play()
+        end
+    end)
+
+    btn.MouseLeave:Connect(function()
+        if not enabled then
+            TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
+        end
+    end)
+
+    btn.MouseButton1Click:Connect(function()
+        enabled = not enabled
+        if enabled then
+            btn.Text = text .. ": ON"
+            TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(45, 150, 75), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
+            TweenService:Create(stroke, animInfo, {Color = Color3.fromRGB(70, 200, 100)}):Play()
+        else
+            btn.Text = text .. ": OFF"
+            TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(40, 40, 48), TextColor3 = Color3.fromRGB(220, 220, 220)}):Play()
+            TweenService:Create(stroke, animInfo, {Color = Color3.fromRGB(70, 70, 85)}):Play()
+        end
+        if callback then
+            callback(enabled)
+        end
+    end)
+
+    return btn
 end
+
+-- Примеры переключателей
+createToggle(pageMain, "Test Feature", 0, 35, function(state)
+    showNotification("Dofamin", "Test Feature: " .. (state and "включено" or "выключено"))
 end)
-btn.MouseLeave:Connect(function()
-if not enabled then
-TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(40, 40, 48)}):Play()
-end
+
+createToggle(pageVisuals, "ESP", 0, 35, function(state)
+    showNotification("Dofamin", "ESP: " .. (state and "включено" or "выключено"))
 end)
-btn.MouseButton1Click:Connect(function()
-enabled = not enabled
-if enabled then
-btn.Text = text .. ": ON"
-TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(45, 150, 75), TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
-TweenService:Create(stroke, animInfo, {Color = Color3.fromRGB(70, 200, 100)}):Play()
-else
-btn.Text = text .. ": OFF"
-TweenService:Create(btn, animInfo, {BackgroundColor3 = Color3.fromRGB(40, 40, 48), TextColor3 = Color3.fromRGB(220, 220, 220)}):Play()
-TweenService:Create(stroke, animInfo, {Color = Color3.fromRGB(70, 70, 85)}):Play()
-end
-callback(enabled)
+
+createToggle(pageSettings, "Notifications", 0, 35, function(state)
+    showNotification("Dofamin", "Уведомления: " .. (state and "включены" or "выключены"))
 end)
-end
