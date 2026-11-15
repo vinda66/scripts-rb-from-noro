@@ -341,8 +341,8 @@ local function createToggle(parentPage, text, posX, posY, callback)
 end
 
 -- Примеры переключателей
-createToggle(pageMain, "Test Feature", 0, 35, function(state)
-    showNotification("Dofamin", "Test Feature: " .. (state and "включено" or "выключено"))
+createToggle(pageMain, "Trigger", 0, 35, function(state)
+    showNotification("Dofamin", "Trigger: " .. (state and "включено" or "выключено"))
 end)
 
 createToggle(pageVisuals, "ESP", 0, 35, function(state)
